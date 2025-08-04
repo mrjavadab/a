@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بازیابی رمز عبور - مدیریت هوشمند ملی</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .forgot-password-gradient {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+        .form-input {
+            @apply w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500;
+        }
+        /* Spinner animation */
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2">
+            
+            <!-- Right Panel: Form & Messages -->
+            <div id="form-section" class="p-8 md:p-12">
+                
+                <!-- Form Container -->
+                <div id="form-container">
+                    <h2 class="text-3xl font-extrabold text-slate-800 mb-4">بازیابی رمز عبور</h2>
+                    <p class="text-slate-500 mb-8">نگران نباشید! شماره موبایل خود را وارد کنید تا لینک بازیابی برای شما ارسال شود.</p>
+                    
+                    <form id="forgot-password-form" class="space-y-6">
+                        <div>
+                            <label for="mobile" class="block text-sm font-bold text-slate-700 mb-2">شماره موبایل</label>
+                            <div class="relative">
+                                <input type="tel" id="mobile" name="mobile" class="form-input" placeholder="مثال: 09123456789" required>
+                            </div>
+                            <p id="error-message" class="text-red-500 text-sm mt-2 hidden"></p>
+                        </div>
+                        
+                        <div>
+                            <button id="submit-button" type="submit" class="w-full flex items-center justify-center py-3 px-4 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all duration-300 transform hover:-translate-y-1 shadow-lg">
+                                <span id="button-text">ارسال لینک بازیابی</span>
+                                <i id="spinner" class="fas fa-spinner spinner hidden"></i>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="mt-8 text-center">
+                        <a href="#" class="font-bold text-slate-600 hover:text-slate-800 flex items-center justify-center">
+                            <i class="fas fa-arrow-right ml-2"></i>
+                            بازگشت به صفحه ورود
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Success Message Container -->
+                <div id="success-message-container" class="hidden flex flex-col items-center justify-center h-full text-center">
+                    <div class="bg-teal-100 text-teal-700 p-6 rounded-full mb-6">
+                        <i class="fas fa-check text-4xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-extrabold text-slate-800 mb-3">با موفقیت ارسال شد!</h2>
+                    <p class="text-slate-600 max-w-sm">
+                        یک پیامک حاوی لینک بازیابی رمز عبور به شماره <strong id="sent-mobile-number"></strong> ارسال گردید.
+                    </p>
+                </div>
+
+            </div>
+
+            <!-- Left Panel: Branding -->
+            <div class="hidden md:flex flex-col items-center justify-center p-12 forgot-password-gradient text-white text-center">
+                <h1 class="text-5xl font-extrabold">مدیریت هوشمند ملی</h1>
+                <p class="mt-4 text-lg text-slate-300 max-w-xs">
+                    امنیت حساب شما اولویت ماست
+                </p>
+                <div class="w-24 h-1 bg-teal-500 mt-8 mb-8 rounded-full"></div>
+                <i class="fas fa-key text-8xl text-teal-500 opacity-20"></i>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        // Get references to DOM elements
+        const form = document.getElementById('forgot-password-form');
+        const mobileInput = document.getElementById('mobile');
+        const submitButton = document.getElementById('submit-button');
+        const buttonText = document.getElementById('button-text');
+        const spinner = document.getElementById('spinner');
+        const errorMessage = document.getElementById('error-message');
+        const formContainer = document.getElementById('form-container');
+        const successContainer = document.getElementById('success-message-container');
+        const sentMobileNumber = document.getElementById('sent-mobile-number');
+
+        // Add submit event listener to the form
+        form.addEventListener('submit', function(event) {
+            // Prevent the default form submission behavior (page refresh)
+            event.preventDefault();
+
+            // --- 1. Get and Validate Input ---
+            const mobileNumber = mobileInput.value;
+            const mobileRegex = /^09\d{9}$/;
+
+            // Hide previous error messages
+            errorMessage.classList.add('hidden');
+            errorMessage.textContent = '';
+
+            if (!mobileRegex.test(mobileNumber)) {
+                errorMessage.textContent = 'شماره موبایل وارد شده صحیح نیست. (مثال: 09123456789)';
+                errorMessage.classList.remove('hidden');
+                mobileInput.focus();
+                return;
+            }
+
+            // --- 2. Set UI to Loading State ---
+            submitButton.disabled = true;
+            buttonText.classList.add('hidden');
+            spinner.classList.remove('hidden');
+
+            // --- 3. Simulate API Call ---
+            // In a real application, you would use fetch() to send the request to your server.
+            // e.g., fetch('/api/forgot-password', { method: 'POST', body: JSON.stringify({ mobile: mobileNumber }) })
+            console.log(`Simulating API call for mobile number: ${mobileNumber}`);
+            
+            setTimeout(() => {
+                // This is a simulation. We'll pretend the request succeeds if the number
+                // doesn't end in '0', and fails otherwise.
+                if (mobileNumber.endsWith('0')) {
+                    // --- 4a. Handle API Error ---
+                    errorMessage.textContent = 'این شماره موبایل در سیستم ما ثبت نشده است.';
+                    errorMessage.classList.remove('hidden');
+                    
+                    // Reset button to normal state
+                    submitButton.disabled = false;
+                    buttonText.classList.remove('hidden');
+                    spinner.classList.add('hidden');
+                } else {
+                    // --- 4b. Handle API Success ---
+                    sentMobileNumber.textContent = mobileNumber;
+                    formContainer.classList.add('hidden');
+                    successContainer.classList.remove('hidden');
+                }
+            }, 2000); // Simulate a 2-second network delay
+        });
+    </script>
+
+</body>
+</html>
