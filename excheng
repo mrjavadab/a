@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>داشبورد کهن‌بن - صرافی‌های دیجیتال (نسخه مدیریت هوشمند ملی)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- DOMPurify for security -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f5f3ff; /* violet-50 */
+        }
+        .card {
+            @apply bg-white rounded-xl shadow-sm p-6 border border-gray-200;
+        }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        
+        .tab-btn-side {
+            @apply flex items-center px-4 py-3 text-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition-colors;
+        }
+        .tab-btn-side.active {
+            @apply bg-violet-600 text-white shadow-md;
+        }
+        .kpi-card {
+            @apply bg-white p-6 rounded-xl shadow-sm border border-gray-200;
+        }
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+        .table-header {
+            @apply bg-gray-50 text-right text-sm font-semibold text-gray-600;
+        }
+        .table-cell {
+            @apply p-4 text-right text-sm text-gray-700 align-middle;
+        }
+
+        /* AI Feature Styles */
+        .ai-response-box {
+            @apply mt-4 p-4 bg-violet-50 border border-violet-200 rounded-lg text-sm text-violet-900 leading-relaxed;
+        }
+        .ai-loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #7c3aed; /* violet-600 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Custom Radio Button for Risk Profile */
+        .risk-radio-label {
+            @apply inline-block px-4 py-2 border rounded-lg cursor-pointer transition-colors;
+        }
+        .risk-radio-input:checked + .risk-radio-label {
+            @apply bg-violet-600 text-white border-violet-600;
+        }
+    </style>
+</head>
+<body class="bg-violet-50">
+
+    <div id="app-wrapper" class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-800 text-white flex flex-col p-4 flex-shrink-0">
+            <div class="flex items-center gap-3 mb-10 border-b border-slate-700 pb-4">
+                <i class="fa-solid fa-right-left text-3xl text-violet-400"></i>
+                <div>
+                    <h1 class="text-xl font-bold">داشبورد صرافی</h1>
+                    <span class="text-sm text-slate-400">نسخه استراتژیک</span>
+                </div>
+            </div>
+            <nav class="flex flex-col space-y-2">
+                <a href="#" class="tab-btn-side active" data-target="overview">
+                    <i class="fa-solid fa-chart-line ml-3 w-5 text-center"></i>نمای کلی
+                </a>
+                <a href="#" class="tab-btn-side" data-target="staking">
+                    <i class="fa-solid fa-layer-group ml-3 w-5 text-center"></i>استیکینگ
+                </a>
+                <a href="#" class="tab-btn-side" data-target="liquidity">
+                    <i class="fa-solid fa-water ml-3 w-5 text-center"></i>تامین نقدینگی
+                </a>
+                <a href="#" class="tab-btn-side" data-target="revenue">
+                    <i class="fa-solid fa-sack-dollar ml-3 w-5 text-center"></i>درآمد کارمزدها
+                </a>
+                 <a href="#" class="tab-btn-side" data-target="reports">
+                    <i class="fa-solid fa-file-invoice ml-3 w-5 text-center"></i>گزارشات ملی
+                </a>
+                <a href="#" class="tab-btn-side" data-target="marketing">
+                    <i class="fa-solid fa-bullhorn ml-3 w-5 text-center"></i>ارتباطات
+                </a>
+                <a href="#" class="tab-btn-side" data-target="api">
+                    <i class="fa-solid fa-code ml-3 w-5 text-center"></i>API و یکپارچه‌سازی
+                </a>
+            </nav>
+            <div class="mt-auto">
+                <div class="flex items-center gap-3 p-3 bg-slate-700 rounded-lg">
+                    <img src="https://placehold.co/40x40/e2e8f0/1e293b?text=E" class="rounded-full" alt="User Avatar">
+                    <div>
+                        <p class="font-bold">اپراتور صرافی</p>
+                        <a href="#" class="text-xs text-violet-400 hover:underline">خروج از حساب</a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            
+            <h1 class="text-3xl font-bold text-slate-800 mb-8" id="main-header-title">نمای کلی</h1>
+
+            <!-- KPIs -->
+            <section id="kpi-section" class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                 <div class="kpi-card" data-kpi-name="حجم معاملات شبکه (۲۴ ساعت)">
+                    <p class="text-gray-500 font-semibold">حجم معاملات شبکه (۲۴ ساعت)</p>
+                    <p class="text-3xl font-bold text-blue-600">۱.۸ تریلیون تومان</p>
+                </div>
+                <div class="kpi-card" data-kpi-name="توکن استیک شده شما">
+                    <p class="text-gray-500 font-semibold">توکن استیک شده شما</p>
+                    <p class="text-3xl font-bold text-violet-600">۵۰ میلیارد تومان</p>
+                </div>
+                <div class="kpi-card" data-kpi-name="درآمد کل (۳۰ روز)">
+                    <p class="text-gray-500 font-semibold">درآمد کل (۳۰ روز)</p>
+                    <p class="text-3xl font-bold text-green-600">۷۵۰ میلیون تومان</p>
+                </div>
+                <div class="kpi-card" data-kpi-name="احساسات بازار">
+                    <p class="text-gray-500 font-semibold">احساسات بازار</p>
+                    <p class="text-3xl font-bold text-amber-600">خنثی</p>
+                </div>
+            </section>
+
+            <!-- Main Dashboard Area -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <!-- Tab Content -->
+                <div>
+                    <!-- Overview Section -->
+                    <section id="overview" class="content-section active">
+                         <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold">تحلیل استراتژیک</h2>
+                            <button id="ai-market-sentiment-btn" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                                ✨ تحلیل بازار با مدیریت هوشمند ملی
+                            </button>
+                        </div>
+                        <div id="ai-market-sentiment-response" class="hidden ai-response-box mb-6"></div>
+                        <div class="grid lg:grid-cols-2 gap-6">
+                            <div class="card">
+                                <h3 class="font-bold mb-4">روند درآمد ماهانه</h3>
+                                <div class="chart-container">
+                                    <canvas id="revenueTrendChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <h3 class="font-bold mb-4">ترکیب درآمد</h3>
+                                <div class="chart-container h-[300px] mt-8">
+                                    <canvas id="revenueCompositionChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- Staking Section -->
+                    <section id="staking" class="content-section">
+                        <h2 class="text-2xl font-bold mb-6">مدیریت استیکینگ توکن بومی</h2>
+                        <div class="grid lg:grid-cols-2 gap-6">
+                            <div class="card">
+                                <h3 class="font-bold mb-4">استیکینگ جدید / برداشت</h3>
+                                <input type="number" placeholder="مقدار توکن" class="w-full p-2 border rounded-md mb-3">
+                                <div class="flex gap-3">
+                                    <button class="w-full py-2 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700">استیک کن</button>
+                                    <button class="w-full py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300">برداشت کن</button>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <h3 class="font-bold mb-4">✨ شبیه‌ساز استراتژی با مدیریت هوشمند ملی</h3>
+                                <p class="text-sm text-gray-500 mb-4">سطح ریسک‌پذیری خود را انتخاب کنید تا مدیریت هوشمند ملی بهترین استراتژی را پیشنهاد دهد.</p>
+                                
+                                <div class="flex justify-center gap-2 mb-4" id="risk-profile-selector">
+                                    <input type="radio" id="risk-conservative" name="risk-profile" value="محافظه‌کارانه" class="hidden risk-radio-input" checked>
+                                    <label for="risk-conservative" class="risk-radio-label">محافظه‌کارانه</label>
+                                    
+                                    <input type="radio" id="risk-balanced" name="risk-profile" value="متعادل" class="hidden risk-radio-input">
+                                    <label for="risk-balanced" class="risk-radio-label">متعادل</label>
+                                    
+                                    <input type="radio" id="risk-aggressive" name="risk-profile" value="جسورانه" class="hidden risk-radio-input">
+                                    <label for="risk-aggressive" class="risk-radio-label">جسورانه</label>
+                                </div>
+
+                                <button id="ai-yield-optimizer-btn" class="w-full py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2">
+                                    دریافت پیشنهاد استراتژی
+                                </button>
+                                <div id="ai-yield-optimizer-response" class="hidden ai-response-box"></div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- Liquidity Section -->
+                    <section id="liquidity" class="content-section">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold">مدیریت استخرهای نقدینگی</h2>
+                             <button id="ai-new-pool-btn" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                                ✨ پیشنهاد استخر با مدیریت هوشمند ملی
+                            </button>
+                        </div>
+                        <div id="ai-new-pool-response" class="hidden ai-response-box mb-6"></div>
+                        <div class="card">
+                            <h3 class="font-bold mb-4">استخرهای فعال</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="table-header">
+                                        <tr>
+                                            <th class="table-cell">جفت ارز</th>
+                                            <th class="table-cell">حجم کل نقدینگی</th>
+                                            <th class="table-cell">APY تخمینی</th>
+                                            <th class="table-cell">عملیات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="liquidity-pools-table"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Revenue Section -->
+                    <section id="revenue" class="content-section">
+                         <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold">تحلیل درآمد کارمزدها</h2>
+                            <button id="ai-fee-anomaly-btn" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                                ✨ شناسایی ناهنجاری
+                            </button>
+                        </div>
+                        <div id="ai-fee-anomaly-response" class="hidden ai-response-box mb-6"></div>
+                        <div class="card">
+                             <h3 class="font-bold mb-4">درآمد روزانه از کارمزد تراکنش‌ها</h3>
+                             <div class="chart-container">
+                                <canvas id="dailyFeeChart"></canvas>
+                             </div>
+                        </div>
+                    </section>
+
+                    <!-- Reports Section -->
+                    <section id="reports" class="content-section">
+                        <h2 class="text-2xl font-bold mb-6">گزارشات استراتژیک با مدیریت هوشمند ملی</h2>
+                        <div class="card">
+                            <h3 class="font-bold mb-4">✨ خلاصه مدیریتی هفتگی</h3>
+                            <p class="text-sm text-gray-500 mb-4">یک گزارش استراتژیک از وضعیت کلی صرافی، شامل دستاوردها، ریسک‌ها و پیشنهادات عملیاتی برای هفته آینده، توسط مدیریت هوشمند ملی تولید کنید.</p>
+                            <button id="ai-generate-report-btn" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                                تولید گزارش هفتگی
+                            </button>
+                            <div id="ai-report-response" class="hidden ai-response-box"></div>
+                        </div>
+                    </section>
+                    
+                    <!-- Marketing Section -->
+                    <section id="marketing" class="content-section">
+                        <h2 class="text-2xl font-bold mb-6">دستیار ارتباطات با مدیریت هوشمند ملی</h2>
+                        <div class="grid lg:grid-cols-2 gap-6">
+                            <div class="card">
+                                <h3 class="font-bold mb-4">✨ تولید محتوای اطلاعیه</h3>
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">موضوع اطلاعیه</label>
+                                        <select id="announcement-topic" class="mt-1 block w-full p-2 border-gray-300 rounded-md">
+                                            <option value="معرفی استخر نقدینگی جدید برای جفت ارز ملک-ج / تومان با APY تخمینی ۱۶٪">معرفی استخر نقدینگی جدید</option>
+                                            <option value="افزایش پاداش استیکینگ به ۲۰٪">افزایش پاداش استیکینگ</option>
+                                            <option value="اطلاعیه به‌روزرسانی فنی API">اطلاعیه به‌روزرسانی فنی</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">لحن پیام</label>
+                                        <select id="announcement-tone" class="mt-1 block w-full p-2 border-gray-300 rounded-md">
+                                            <option value="رسمی و حرفه‌ای">رسمی و حرفه‌ای</option>
+                                            <option value="دوستانه و هیجان‌انگیز">دوستانه و هیجان‌انگیز</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                 <button id="ai-generate-content-btn" class="mt-6 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                                    تولید محتوا
+                                </button>
+                                <div id="ai-content-response" class="hidden ai-response-box"></div>
+                            </div>
+                            <div class="card">
+                                <h3 class="font-bold mb-4">✨ ایده‌پرداز کمپین بازاریابی</h3>
+                                <label for="campaign-goal" class="block text-sm font-medium text-gray-700">هدف اصلی کمپین را وارد کنید:</label>
+                                <input type="text" id="campaign-goal" class="mt-1 block w-full p-2 border-gray-300 rounded-md" placeholder="مثال: افزایش ۲۰٪ حجم معاملات استخر ملک-الف">
+                                <button id="ai-campaign-ideator-btn" class="mt-4 w-full py-2 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 flex items-center justify-center gap-2">
+                                    طراحی کمپین
+                                </button>
+                                <div id="ai-campaign-ideator-response" class="hidden ai-response-box"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- API Section -->
+                    <section id="api" class="content-section">
+                        <h2 class="text-2xl font-bold mb-6">API و یکپارچه‌سازی</h2>
+                        <div class="card">
+                            <h3 class="font-bold mb-4">کلیدهای API شما</h3>
+                            <div class="bg-gray-100 p-4 rounded-lg font-mono text-gray-700 flex justify-between items-center">
+                                <span>pk_live_******************1234</span>
+                                <button class="text-gray-500 hover:text-gray-800"><i class="fa-solid fa-copy"></i></button>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-4">از این کلیدها برای اتصال امن به زیرساخت کهن‌بن و مدیریت نقدینگی و استیکینگ به صورت برنامه‌نویسی شده استفاده کنید. <a href="#" class="text-violet-600 font-semibold">مشاهده مستندات</a></p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const API_KEY = ""; 
+            const API_MODEL = "gemini-2.5-flash-preview-05-20";
+
+            // --- Mock Data ---
+            const mockData = {
+                revenueTrend: { labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'], datasets: [
+                    { label: 'پاداش استیکینگ', data: [200, 220, 250, 240, 280, 300], backgroundColor: '#8b5cf6' },
+                    { label: 'کارمزد نقدینگی', data: [150, 160, 150, 180, 190, 220], backgroundColor: '#a78bfa' },
+                    { label: 'کارمزد شبکه', data: [210, 200, 230, 250, 240, 230], backgroundColor: '#c4b5fd' },
+                ]},
+                revenueComposition: { labels: ['استیکینگ', 'کارمزد نقدینگی', 'کارمزد شبکه'], data: [40, 25, 35] },
+                dailyFees: { labels: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'], data: [30, 35, 32, 40, 45, 50, 25] },
+                liquidityPools: [
+                    { pair: 'توکن بومی / تومان', tvl: '۲۵۰ میلیارد تومان', apy: '۲۲٪' },
+                    { pair: 'توکن ملک-الف / تومان', tvl: '۱۲۰ میلیارد تومان', apy: '۱۵٪' },
+                    { pair: 'توکن خودرو-ب / تومان', tvl: '۴۵ میلیارد تومان', apy: '۱۸٪' },
+                ],
+                stakingApy: '19%'
+            };
+            
+            // --- UI Elements ---
+            const mainHeaderTitle = document.getElementById('main-header-title');
+            const tabButtons = document.querySelectorAll('.tab-btn-side');
+            const contentSections = document.querySelectorAll('.content-section');
+            const aiYieldOptimizerBtn = document.getElementById('ai-yield-optimizer-btn');
+            const aiYieldOptimizerResponse = document.getElementById('ai-yield-optimizer-response');
+            const aiFeeAnomalyBtn = document.getElementById('ai-fee-anomaly-btn');
+            const aiFeeAnomalyResponse = document.getElementById('ai-fee-anomaly-response');
+            const aiMarketSentimentBtn = document.getElementById('ai-market-sentiment-btn');
+            const aiMarketSentimentResponse = document.getElementById('ai-market-sentiment-response');
+            const aiGenerateContentBtn = document.getElementById('ai-generate-content-btn');
+            const aiContentResponse = document.getElementById('ai-content-response');
+            const aiGenerateReportBtn = document.getElementById('ai-generate-report-btn');
+            const aiReportResponse = document.getElementById('ai-report-response');
+            const aiNewPoolBtn = document.getElementById('ai-new-pool-btn');
+            const aiNewPoolResponse = document.getElementById('ai-new-pool-response');
+            const aiCampaignIdeatorBtn = document.getElementById('ai-campaign-ideator-btn');
+            const aiCampaignIdeatorResponse = document.getElementById('ai-campaign-ideator-response');
+
+            // --- Gemini API Call ---
+            const callGeminiAPI = async (prompt) => {
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                let retries = 0;
+                while (retries < 3) {
+                    try {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${API_KEY}`, {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                        });
+                        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                        const result = await response.json();
+                        const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+                        if(text) {
+                            return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*/g, '<br>• ').replace(/\n/g, '<br>');
+                        }
+                        return 'پاسخی از سرویس مدیریت هوشمند ملی دریافت نشد.';
+                    } catch (error) {
+                        console.error('API call failed:', error);
+                        retries++;
+                        await new Promise(res => setTimeout(res, 1000 * retries));
+                    }
+                }
+                return 'متأسفانه در برقراری ارتباط با سرویس مدیریت هوشمند ملی مشکلی پیش آمده است.';
+            };
+
+            const showLoading = (element) => {
+                element.innerHTML = `<div class="flex items-center justify-center gap-2"><div class="ai-loading-spinner"></div><span>در حال پردازش...</span></div>`;
+                element.classList.remove('hidden');
+            };
+
+            // --- Chart Rendering ---
+            new Chart(document.getElementById('revenueTrendChart').getContext('2d'), {
+                type: 'bar', data: { labels: mockData.revenueTrend.labels, datasets: mockData.revenueTrend.datasets },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, plugins: { legend: { position: 'bottom', labels: {font: { family: 'Vazirmatn' }} } } }
+            });
+            new Chart(document.getElementById('revenueCompositionChart').getContext('2d'), {
+                type: 'doughnut', data: { labels: mockData.revenueComposition.labels, datasets: [{ data: mockData.revenueComposition.data, backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {font: { family: 'Vazirmatn' }} } } }
+            });
+            new Chart(document.getElementById('dailyFeeChart').getContext('2d'), {
+                type: 'line', data: { labels: mockData.dailyFees.labels, datasets: [{ label: 'درآمد (میلیون تومان)', data: mockData.dailyFees.data, borderColor: '#7c3aed', tension: 0.1, fill: false }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+            
+            // --- Table Population ---
+            const liquidityTbody = document.getElementById('liquidity-pools-table');
+            liquidityTbody.innerHTML = mockData.liquidityPools.map(p => `
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="table-cell font-bold">${p.pair}</td>
+                    <td class="table-cell">${p.tvl}</td>
+                    <td class="table-cell text-green-600 font-semibold">${p.apy}</td>
+                    <td class="table-cell space-x-2 space-x-reverse">
+                        <button class="text-xs px-3 py-1 bg-green-100 text-green-700 font-semibold rounded hover:bg-green-200">افزودن</button>
+                        <button class="text-xs px-3 py-1 bg-red-100 text-red-700 font-semibold rounded hover:bg-red-200">خارج کردن</button>
+                        <button class="ai-il-forecast-btn text-indigo-600 hover:text-indigo-800" title="پیش‌بینی ضرر ناپایدار" data-pair="${p.pair}">✨</button>
+                    </td>
+                </tr>`).join('');
+
+            // --- Interactivity ---
+            tabButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = button.dataset.target;
+                    contentSections.forEach(section => section.classList.remove('active'));
+                    document.getElementById(targetId).classList.add('active');
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    mainHeaderTitle.innerText = button.innerText.trim();
+                });
+            });
+
+            // --- AI Features Logic ---
+            async function handleAIRequest(button, responseBox, promptGenerator) {
+                const originalHTML = button.innerHTML;
+                const spinner = '<div class="ai-loading-spinner mx-auto" style="width:16px; height:16px; border-width:2px;"></div>';
+                button.innerHTML = spinner;
+                button.disabled = true;
+                showLoading(responseBox);
+                
+                const prompt = promptGenerator();
+                const response = await callGeminiAPI(prompt);
+                responseBox.innerHTML = DOMPurify.sanitize(response);
+
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            }
+            
+            aiMarketSentimentBtn.addEventListener('click', () => {
+                handleAIRequest(aiMarketSentimentBtn, aiMarketSentimentResponse, () => {
+                    const kpiCards = document.querySelectorAll('.kpi-card');
+                    let kpiData = Array.from(kpiCards).map(card => {
+                        const name = card.dataset.kpiName;
+                        const value = card.querySelector('p:last-child').innerText;
+                        return `${name}: ${value}`;
+                    }).join(', ');
+                    return `شما یک تحلیلگر ارشد بازار کریپتو هستید. با توجه به داده‌های کلیدی زیر: (${kpiData})، احساسات کلی بازار را (صعودی، نزولی یا خنثی) ارزیابی کرده و دلیل اصلی این وضعیت را در یک پاراگراف کوتاه توضیح دهید. یک توصیه کلیدی برای صرافی ارائه دهید.`;
+                });
+            });
+            
+            aiYieldOptimizerBtn.addEventListener('click', () => {
+                handleAIRequest(aiYieldOptimizerBtn, aiYieldOptimizerResponse, () => {
+                    const riskProfile = document.querySelector('input[name="risk-profile"]:checked').value;
+                    const stakedAmount = document.querySelector('[data-kpi-name="توکن استیک شده شما"] p:last-child').innerText;
+                    const stakingApy = mockData.stakingApy;
+                    const mainPool = mockData.liquidityPools[0];
+                    return `شما یک استراتژیست DeFi برای یک صرافی بزرگ هستید. برای یک کاربر با پروفایل ریسک '${riskProfile}' که ${stakedAmount} سرمایه دارد، بهترین استراتژی تخصیص سرمایه بین استیکینگ با APY ${stakingApy} و استخر نقدینگی اصلی ("${mainPool.pair}") با APY ${mainPool.apy} چیست؟ دلایل خود را برای این تخصیص توضیح دهید و ریسک‌های هرکدام را به زبان ساده بیان کنید.`;
+                });
+            });
+
+            aiNewPoolBtn.addEventListener('click', () => {
+                handleAIRequest(aiNewPoolBtn, aiNewPoolResponse, () => {
+                    return `شما یک استراتژیست DeFi هستید. بر اساس تحلیل روند حجم معاملات در صرافی‌های رقیب و پروژه‌های جدید در اکوسیستم، ۳ جفت ارز جدید که پتانسیل بالایی برای ایجاد استخر نقدینگی موفق در صرافی ما دارند را پیشنهاد دهید. برای هر کدام دلیل استراتژیک (مثلاً ارتباط با یک پروژه پرطرفدار یا حل یک نیاز بازار) و یک APY تخمینی اولیه بیاورید.`;
+                });
+            });
+
+            aiCampaignIdeatorBtn.addEventListener('click', () => {
+                const goal = document.getElementById('campaign-goal').value;
+                if (!goal) {
+                    alert('لطفاً هدف کمپین را وارد کنید.');
+                    return;
+                }
+                handleAIRequest(aiCampaignIdeatorBtn, aiCampaignIdeatorResponse, () => {
+                    return `شما یک مدیر ارشد بازاریابی خلاق هستید. یک کمپین بازاریابی ۳ مرحله‌ای برای رسیدن به این هدف طراحی کن: "${goal}".
+                    برای هر مرحله موارد زیر را مشخص کن:
+                    * **نام مرحله و شعار:** (مثلاً: مرحله ۱: آگاهی‌بخشی - "سود خود را دوچندان کنید!")
+                    * **اقدام اصلی:** (مثلاً: مسابقه ترید، افزایش موقت پاداش، ایردراپ)
+                    * **کانال‌های ارتباطی:** (مثلاً: توییتر، تلگرام، وبلاگ، اینفلوئنسرها)
+                    * **محتوای کلیدی:** (مثلاً: یک متن توییت جذاب با ایموجی، یک پست وبلاگ تحلیلی)`;
+                });
+            });
+
+            liquidityTbody.addEventListener('click', (e) => {
+                const forecastBtn = e.target.closest('.ai-il-forecast-btn');
+                if (forecastBtn) {
+                    const pair = forecastBtn.dataset.pair;
+                    const responseBox = document.createElement('div');
+                    responseBox.className = 'ai-response-box absolute bg-white shadow-lg p-2 rounded-lg border z-10 w-64 text-xs';
+                    forecastBtn.parentElement.appendChild(responseBox);
+                    
+                    const promptFn = () => `شما یک تحلیلگر ریسک DeFi هستید. برای استخر نقدینگی "${pair}"، ریسک "ضرر ناپایدار" (Impermanent Loss) را در صورت نوسان ۱۰٪ قیمت توکن بومی، به زبان ساده توضیح دهید و یک راهکار برای کاهش این ریسک پیشنهاد دهید.`;
+                    
+                    handleAIRequest(forecastBtn, responseBox, promptFn);
+                    
+                    setTimeout(() => {
+                        document.addEventListener('click', (event) => {
+                            if (!responseBox.contains(event.target) && !forecastBtn.contains(event.target)) {
+                                responseBox.remove();
+                            }
+                        }, { once: true });
+                    }, 100);
+                }
+            });
+
+            aiFeeAnomalyBtn.addEventListener('click', () => {
+                handleAIRequest(aiFeeAnomalyBtn, aiFeeAnomalyResponse, () => {
+                    const feeData = JSON.stringify(mockData.dailyFees);
+                    return `شما یک تحلیلگر داده برای یک صرافی هستید. با توجه به داده‌های درآمد روزانه از کارمزد (${feeData})، یک ناهنجاری (مثلاً افت یا رشد شدید) را شناسایی کرده، دو دلیل احتمالی برای آن ذکر کنید و یک پیشنهاد برای بررسی بیشتر ارائه دهید.`;
+                });
+            });
+            
+            aiGenerateContentBtn.addEventListener('click', () => {
+                const topic = document.getElementById('announcement-topic').value;
+                const tone = document.getElementById('announcement-tone').value;
+                handleAIRequest(aiContentResponse, aiContentResponse, () => {
+                    return `شما یک مدیر بازاریابی برای یک صرافی دیجیتال هستید. یک متن اطلاعیه جذاب و یک متن توییت برای موضوع زیر با لحن "${tone}" بنویس. در متن از ایموجی‌های مرتبط استفاده کن.\n\nموضوع: ${topic}`;
+                });
+            });
+            
+            aiGenerateReportBtn.addEventListener('click', () => {
+                handleAIRequest(aiGenerateReportBtn, aiReportResponse, () => {
+                     const kpiCards = document.querySelectorAll('.kpi-card');
+                    let kpiData = Array.from(kpiCards).map(card => {
+                        const name = card.dataset.kpiName;
+                        const value = card.querySelector('p:last-child').innerText;
+                        return `${name}: ${value}`;
+                    }).join('; ');
+                    const topPool = mockData.liquidityPools[0];
+
+                    return `شما مدیر ارشد استراتژی یک صرافی دیجیتال هستید. یک خلاصه مدیریتی هفتگی بنویسید. از فرمت زیر استفاده کنید و تحلیل خود را اضافه کنید:
+                    
+                    **خلاصه هفتگی وضعیت صرافی**
+
+                    **۱. نمای کلی عملکرد:**
+                    - (بر اساس این داده‌ها تحلیل کنید: ${kpiData})
+
+                    **۲. بزرگترین فرصت:**
+                    - (با توجه به اینکه استخر "${topPool.pair}" با APY ${topPool.apy} بالاترین بازدهی را دارد، یک فرصت استراتژیک را توضیح دهید)
+
+                    **۳. ریسک اصلی:**
+                    - (با توجه به داده‌های کارمزد روزانه ${JSON.stringify(mockData.dailyFees)}، یک ریسک بالقوه را شناسایی کنید)
+
+                    **۴. پیشنهاد عملیاتی برای هفته آینده:**
+                    - (یک اقدام مشخص و قابل اجرا پیشنهاد دهید)`;
+                });
+            });
+
+        });
+    </script>
+
+</body>
+</html>
