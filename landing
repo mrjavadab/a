@@ -124,7 +124,7 @@
         .process-container { @apply flex flex-col md:flex-row items-center justify-between gap-4 mt-8; }
         .process-step { @apply flex-1 text-center p-4 border border-dashed border-slate-300 rounded-lg flex flex-col items-center; }
         .process-step-icon { @apply w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl mb-3; }
-        .process-step-arrow { @apply text-3xl text-slate-300 hidden md:block; }
+        .process-step-arrow { @apply text-3xl text-slate-300 hidden md:block; transform: rotate(180deg); }
 
         /* --- Comparison Table Styles --- */
         .comparison-table td, .comparison-table th { @apply px-4 py-4 text-center; }
@@ -201,11 +201,11 @@
                 <button data-target="faq" class="main-nav-btn px-4 py-2 rounded-md">سوالات متداول</button>
             </nav>
             <div class="flex items-center space-x-2 space-x-reverse">
-                 <button id="darkModeToggle" class="p-2 rounded-full hover:bg-slate-100 transition">
+                 <button id="darkModeToggle" class="p-2 rounded-full hover:bg-slate-100 transition" aria-label="تغییر حالت تیره/روشن">
                     <span class="dark-icon"> <i class="fa-solid fa-moon text-lg"></i> </span>
                     <span class="light-icon hidden"> <i class="fa-solid fa-sun text-lg"></i> </span>
                 </button>
-                <button id="mobileMenuToggle" class="p-2 rounded-full hover:bg-slate-100 transition md:hidden">
+                <button id="mobileMenuToggle" class="p-2 rounded-full hover:bg-slate-100 transition md:hidden" aria-label="باز کردن منوی موبایل">
                     <i class="fa-solid fa-bars text-xl"></i>
                 </button>
             </div>
@@ -263,10 +263,10 @@
             </div>
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 text-right" id="ecosystem-cards-container"></div>
             <div class="text-center mt-6">
-                <button id="ai-partner-btn" class="btn btn-primary"><i class="fa-solid fa-sparkles ml-2"></i>ایده‌پردازی شریک جدید با هوش مصنوعی</button>
+                <button id="ai-partner-btn" class="btn btn-primary"><i class="fa-solid fa-sparkles ml-2"></i>ایده‌پردازی شریک جدید با مدیریت هوشمند ملی</button>
             </div>
             <div id="ai-partner-suggestion" class="card mt-8 hidden">
-                <h4 class="text-xl font-bold mb-4">پیشنهاد هوشمند برای شریک جدید:</h4>
+                <h4 class="text-xl font-bold mb-4">پیشنهاد مدیریت هوشمند ملی برای شریک جدید:</h4>
                 <div class="prose prose-lg max-w-none text-slate-600" id="ai-partner-content"></div>
             </div>
         </section>
@@ -281,7 +281,7 @@
                 <h3 class="text-2xl font-bold text-center mb-6">تحلیل و پیش‌بینی مدل درآمدی</h3>
                 <div class="w-full h-80"><canvas id="revenue-chart"></canvas></div>
                 <div class="text-center mt-6">
-                    <button id="ai-revenue-analysis-btn" class="btn btn-primary"><i class="fa-solid fa-wand-magic-sparkles ml-2"></i>تحلیل هوشمند نمودار</button>
+                    <button id="ai-revenue-analysis-btn" class="btn btn-primary"><i class="fa-solid fa-wand-magic-sparkles ml-2"></i>تحلیل نمودار با مدیریت هوشمند ملی</button>
                 </div>
                 <div id="revenue-analysis-container" class="ai-response-container mt-6 hidden"></div>
             </div>
@@ -331,7 +331,7 @@
         <section id="analytics" class="content-section">
             <div class="text-center mb-12">
                 <h2 class="section-title text-3xl md:text-4xl font-bold mb-4">تحلیل پیشرفته</h2>
-                <p class="max-w-3xl mx-auto text-lg text-slate-600">داده‌های خود را با ابزار هوش مصنوعی کهن‌بن تحلیل کنید.</p>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">داده‌های خود را با ابزار مدیریت هوشمند ملی کهن‌بن تحلیل کنید.</p>
             </div>
             <div class="card">
                 <h3 class="text-xl font-bold mb-4">تحلیل داده‌های اقتصادی</h3>
@@ -351,10 +351,10 @@
     </main>
     
     <!-- AI Chatbot -->
-    <div id="chatbot-toggle" aria-label="باز کردن چت‌بات" aria-expanded="false"><i class="fa-solid fa-robot"></i></div>
+    <div id="chatbot-toggle" aria-label="باز کردن چت‌بات مدیریت هوشمند" aria-expanded="false"><i class="fa-solid fa-robot"></i></div>
     <div id="chatbot-window">
         <div id="chatbot-header">
-            <span>گفتگو با هوش مصنوعی کهن‌بُن</span>
+            <span>گفتگو با مدیریت هوشمند ملی کهن‌بُن</span>
             <button id="chatbot-clear" class="text-sm text-white mr-2 hover:underline">پاک کردن</button>
             <button id="chatbot-close" class="text-xl">&times;</button>
         </div>
@@ -491,6 +491,10 @@
             revenueAnalysisContainer: document.getElementById('revenue-analysis-container'),
         };
 
+        // IMPORTANT SECURITY NOTE: 
+        // Storing API keys directly in client-side code is highly insecure and should NEVER be done in a real-world application.
+        // This is only done here for demonstration purposes in a simulated environment.
+        // In a production environment, all API calls must be proxied through a secure backend server that holds the API key.
         const API_KEY = ""; // Your API key will be injected here
         const API_MODEL = "gemini-2.5-flash-preview-05-20";
         let revenueChartInstance = null;
@@ -500,15 +504,13 @@
         // --- Core Logic & Functions ---
         /**
          * Calls the Gemini API with exponential backoff.
-         * Note: In a production environment, this call should be proxied through a backend server
-         * to protect the API key. The user-provided `server.js` is a good example of this.
          * @param {Object} payload - The API request payload.
-         * @returns {Promise<string|null>} The API response or null on failure.
+         * @returns {Promise<string|null>} The API response or a user-friendly error message.
          */
         const callGeminiAPI = async (payload) => {
             let retries = 0;
             const maxRetries = 5;
-            const delay = 1000;
+            const initialDelay = 1000;
             while (retries < maxRetries) {
                 try {
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${API_KEY}`;
@@ -517,16 +519,30 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
-                    if (!response.ok) throw new Error(`API error: ${response.statusText}`);
+                    if (!response.ok) {
+                        // Improved error handling to give more context if possible
+                        const errorBody = await response.json().catch(() => null);
+                        console.error(`API Error: ${response.status} ${response.statusText}`, errorBody);
+                        throw new Error(`خطا در ارتباط با سرور: ${response.status}`);
+                    }
                     const result = await response.json();
-                    return result?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+                    // Refined prompt for better quality responses
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!text) {
+                        console.warn("API response was successful but content is empty.", result);
+                        return "پاسخی دریافت نشد. لطفاً دوباره تلاش کنید.";
+                    }
+                    return text;
                 } catch (error) {
-                    console.error('API call failed:', error);
+                    console.error('API call failed on attempt ' + (retries + 1), error);
                     retries++;
-                    await new Promise(res => setTimeout(res, delay * Math.pow(2, retries)));
+                    if (retries >= maxRetries) {
+                        return 'متأسفانه پس از چندین تلاش، امکان پاسخگویی وجود ندارد. لطفاً بعداً دوباره امتحان کنید.';
+                    }
+                    await new Promise(res => setTimeout(res, initialDelay * Math.pow(2, retries)));
                 }
             }
-             return 'متأسفانه، در حال حاضر امکان پاسخگویی وجود ندارد.';
+             return 'یک خطای غیرمنتظره رخ داده است. لطفاً با پشتیبانی تماس بگیرید.';
         };
 
         const showLoading = (element) => {
@@ -557,7 +573,7 @@
             ui.challengesContainer.innerHTML = appData.challenges.map(challenge => `
                 <div class="card cursor-pointer flex justify-between items-center bg-white border border-red-200 text-red-700 hover:border-red-600 hover:bg-red-50 transition-all duration-300 p-4" data-solution="${challenge.solution}" data-title="${challenge.title}">
                     <p class="font-semibold text-lg">${challenge.title}</p>
-                    <i class="fa-solid fa-arrow-left text-xl"></i>
+                    <i class="fa-solid fa-arrow-left text-xl" style="transform: rotate(180deg);"></i>
                 </div>
             `).join('');
             
@@ -573,10 +589,11 @@
         const setupUseCases = () => {
             ui.useCasesContainer.innerHTML = appData.useCases.map(useCase => {
                 let processHtml = '';
+                const arrowIcon = `<div class="process-step-arrow"><i class="fa-solid fa-arrow-left"></i></div>`;
                 if (useCase.id === 'tokenization') {
-                    processHtml = `<h4 class="text-xl font-bold mb-6 text-center">فرآیند ۴ مرحله‌ای توکنیزاسیون</h4><div class="process-container">${appData.tokenizationSteps.map((step, index) => `<div class="process-step"><div class="process-step-icon bg-teal-600"><i class="${step.icon}"></i></div><h5 class="font-bold">${step.title}</h5><p class="text-sm text-slate-500 mt-1">${step.description}</p></div>${index < appData.tokenizationSteps.length - 1 ? '<div class="process-step-arrow"><i class="fa-solid fa-arrow-left"></i></div>' : ''}`).join('')}</div>`;
+                    processHtml = `<h4 class="text-xl font-bold mb-6 text-center">فرآیند ۴ مرحله‌ای توکنیزاسیون</h4><div class="process-container">${appData.tokenizationSteps.map((step, index) => `<div class="process-step"><div class="process-step-icon bg-teal-600"><i class="${step.icon}"></i></div><h5 class="font-bold">${step.title}</h5><p class="text-sm text-slate-500 mt-1">${step.description}</p></div>${index < appData.tokenizationSteps.length - 1 ? arrowIcon : ''}`).join('')}</div>`;
                 } else if (useCase.id === 'supply_chain') {
-                    processHtml = `<h4 class="text-xl font-bold mb-6 text-center">فرآیند ۴ مرحله‌ای بهینه‌سازی واردات</h4><div class="process-container">${appData.importProcessSteps.map((step, index) => `<div class="process-step"><div class="process-step-icon bg-teal-600"><i class="${step.icon}"></i></div><h5 class="font-bold">${step.title}</h5><p class="text-sm text-slate-500 mt-1">${step.description}</p></div>${index < appData.importProcessSteps.length - 1 ? '<div class="process-step-arrow"><i class="fa-solid fa-arrow-left"></i></div>' : ''}`).join('')}</div>`;
+                    processHtml = `<h4 class="text-xl font-bold mb-6 text-center">فرآیند ۴ مرحله‌ای بهینه‌سازی واردات</h4><div class="process-container">${appData.importProcessSteps.map((step, index) => `<div class="process-step"><div class="process-step-icon bg-teal-600"><i class="${step.icon}"></i></div><h5 class="font-bold">${step.title}</h5><p class="text-sm text-slate-500 mt-1">${step.description}</p></div>${index < appData.importProcessSteps.length - 1 ? arrowIcon : ''}`).join('')}</div>`;
                 }
                 return `<div class="card"><header class="text-center mb-6"><i class="${useCase.icon} text-5xl text-teal-600 mb-4"></i><h3 class="text-3xl font-bold text-gray-800">${useCase.title}</h3><p class="mt-3 text-lg text-slate-600">${useCase.description}</p></header><div class="mt-8 border-t pt-8">${useCase.id === 'tokenization' ? `<h4 class="text-xl font-bold mb-4 text-center">دارایی‌های قابل توکنیزه شدن</h4><div class="flex flex-wrap justify-center gap-2 mb-8">${appData.tokenizableAssets.map(asset => `<span class="token-asset-tag">${asset}</span>`).join('')}</div>` : ''}${processHtml}</div><div class="mt-8 border-t pt-8 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-6"><h4 class="text-xl font-bold mb-2 text-center text-amber-700 dark:text-amber-400">پتانسیل درآمدی</h4><p class="text-center text-slate-600">${useCase.revenuePotential}</p></div></div>`;
             }).join('');
@@ -586,7 +603,7 @@
             showLoading(aiElements.aiPartnerContent.parentElement);
             aiElements.aiPartnerBtn.disabled = true;
             const existingPartners = appData.ecosystem.map(p => p.title).join(', ');
-            const prompt = `با توجه به اطلاعات زیر در مورد اکوسیستم کهن‌بُن، یک شریک جدید و خلاقانه برای این پلتفرم پیشنهاد بده و توضیح بده که چگونه می‌تواند به اکوسیستم کمک کند. خروجی باید شامل عنوان (مثلا "تکنولوژی‌های پوشیدنی") و توضیحات (مثلا "یکپارچه‌سازی با سنسورهای... و ایجاد... ") باشد.\nاطلاعات پروژه کهن‌بُن: ${appData.projectSummaryForAI}\nشرکای فعلی: ${existingPartners}`;
+            const prompt = `با توجه به اطلاعات پروژه کهن‌بُن، یک شریک تجاری یا فنی جدید و خلاقانه برای این پلتفرم پیشنهاد بده. توضیح بده که این همکاری چگونه می‌تواند به رشد اکوسیستم کمک کند و چه ارزشی ایجاد می‌کند. پاسخ باید ساختاریافته و شامل عنوان و توضیحات کامل باشد.\n\nاطلاعات پروژه:\n${appData.projectSummaryForAI}\n\nشرکای فعلی:\n${existingPartners}`;
             const response = await callGeminiAPI({ contents: [{ role: "user", parts: [{ text: prompt }] }] });
             aiElements.aiPartnerBtn.disabled = false;
             if (response && typeof response === 'string') {
@@ -596,7 +613,7 @@
                 aiElements.aiPartnerContent.parentElement.classList.remove('hidden');
                 aiElements.aiPartnerContent.innerHTML = `<h5 class="text-xl font-bold text-teal-600">${title}</h5><p class="mt-2 text-slate-600 dark:text-slate-300">${description}</p>`;
             } else {
-                aiElements.aiPartnerContent.innerHTML = `<p class="text-center text-red-500">متأسفانه، در حال حاضر امکان تولید ایده وجود ندارد.</p>`;
+                aiElements.aiPartnerContent.innerHTML = `<p class="text-center text-red-500">${response || 'متأسفانه، در حال حاضر امکان تولید ایده وجود ندارد.'}</p>`;
             }
         };
 
@@ -608,11 +625,11 @@
         const generateRevenueAnalysis = async () => {
             showLoading(aiElements.revenueAnalysisContainer);
             aiElements.aiRevenueAnalysisBtn.disabled = true;
-            const dataSummary = globalChartData.revenueStreams.map(stream => `${stream.name}: درآمد در سال ${globalChartData.years.join(', ')} به ترتیب ${stream.data.join(', ')} میلیون دلار است.`).join('\n');
-            const prompt = `با توجه به داده‌های پیش‌بینی درآمد پلتفرم کهن‌بن، یک تحلیل استراتژیک و حرفه‌ای بنویس. تحلیل باید شامل نکات کلیدی، فرصت‌ها و ریسک‌های احتمالی باشد.\nداده‌ها:\n${dataSummary}\nتحلیل خود را در چند پاراگراف ارائه بده.`;
+            const dataSummary = globalChartData.revenueStreams.map(stream => `${stream.name}: درآمد پیش‌بینی‌شده برای سال‌های ${globalChartData.years.join(', ')} به ترتیب ${stream.data.join(', ')} میلیون دلار است.`).join('\n');
+            const prompt = `شما یک تحلیلگر ارشد مالی هستید. با توجه به داده‌های پیش‌بینی درآمد پلتفرم کهن‌بن، یک تحلیل استراتژیک و حرفه‌ای بنویسید. تحلیل باید شامل نکات کلیدی (روند رشد، سهم هر بخش)، فرصت‌ها (مانند بخش‌های پرپتانسیل) و ریسک‌های احتمالی (مانند وابستگی به یک جریان درآمدی خاص) باشد.\n\nداده‌ها:\n${dataSummary}\n\nتحلیل خود را در چند پاراگراف ساختاریافته ارائه دهید.`;
             const response = await callGeminiAPI({ contents: [{ role: "user", parts: [{ text: prompt }] }] });
             aiElements.aiRevenueAnalysisBtn.disabled = false;
-            aiElements.revenueAnalysisContainer.innerHTML = `<div class="prose prose-lg max-w-none text-slate-600 dark:text-slate-300">${DOMPurify.sanitize(response.replace(/\n/g, '<br>'))}</div>`;
+            aiElements.revenueAnalysisContainer.innerHTML = `<div class="prose prose-lg max-w-none text-slate-600 dark:text-slate-300">${DOMPurify.sanitize((response || 'تحلیل در دسترس نیست.').replace(/\n/g, '<br>'))}</div>`;
         };
 
         const renderRevenueChart = (chartData) => {
@@ -653,11 +670,11 @@
             const prompt = `با توجه به اطلاعات فاز "${phase.title}" از نقشه راه پروژه کهن‌بن، این مرحله را با جزئیات بیشتری تشریح کن. تحلیل باید شامل موارد زیر باشد:\n1.  **اهداف اصلی (Key Objectives):**\n2.  **فعالیت‌های کلیدی (Key Activities):**\n3.  **ریسک‌های بالقوه (Potential Risks):**\n4.  **شاخص‌های کلیدی عملکرد (KPIs):**\n\nاطلاعات فاز:\n- عنوان: ${phase.title}\n- دوره زمانی: ${phase.period}\n- خلاصه: ${phase.content}\n- جزئیات فنی: ${phase.technical.replace(/\*\*/g, '')}\n\nپاسخ را به صورت متنی ساختاریافته با عنوان‌بندی مناسب ارائه بده.`;
             const response = await callGeminiAPI({ contents: [{ role: "user", parts: [{ text: prompt }] }] });
             button.disabled = false;
-            container.innerHTML = `<div class="prose prose-lg max-w-none text-slate-600 dark:text-slate-300">${DOMPurify.sanitize(response.replace(/\n/g, '<br>'))}</div>`;
+            container.innerHTML = `<div class="prose prose-lg max-w-none text-slate-600 dark:text-slate-300">${DOMPurify.sanitize((response || 'تحلیل در دسترس نیست.').replace(/\n/g, '<br>'))}</div>`;
         };
 
         const setupRoadmap = () => {
-            ui.roadmapContainer.innerHTML = appData.roadmap.map((item, index) => `<div class="timeline-item" id="roadmap-item-${index}"><div class="timeline-content card"><span class="font-bold text-teal-600">${item.phase} (${item.period})</span><h4 class="text-xl font-bold text-gray-800 dark:text-gray-100 mt-2">${item.title}</h4><p class="text-base text-slate-600 dark:text-slate-400 mt-2">${item.content}</p><button class="ai-roadmap-btn mt-4 text-teal-600 font-semibold flex items-center" data-index="${index}"><i class="fa-solid fa-wand-magic-sparkles ml-2"></i><span>تشریح با هوش مصنوعی</span></button><div class="ai-roadmap-container ai-response-container hidden mt-4"></div></div></div>`).join('');
+            ui.roadmapContainer.innerHTML = appData.roadmap.map((item, index) => `<div class="timeline-item" id="roadmap-item-${index}"><div class="timeline-content card"><span class="font-bold text-teal-600">${item.phase} (${item.period})</span><h4 class="text-xl font-bold text-gray-800 dark:text-gray-100 mt-2">${item.title}</h4><p class="text-base text-slate-600 dark:text-slate-400 mt-2">${item.content}</p><button class="ai-roadmap-btn mt-4 text-teal-600 font-semibold flex items-center" data-index="${index}"><i class="fa-solid fa-wand-magic-sparkles ml-2"></i><span>تشریح با مدیریت هوشمند ملی</span></button><div class="ai-roadmap-container ai-response-container hidden mt-4"></div></div></div>`).join('');
             document.querySelectorAll('.ai-roadmap-btn').forEach(button => {
                 button.addEventListener('click', () => {
                     const index = button.dataset.index;
@@ -674,7 +691,7 @@
             const prompt = `یک بیوگرافی حرفه‌ای و جذاب برای ${member.name}، ${member.role} پروژه کهن‌بن بنویس. در بیوگرافی به تخصص، تجربه و نقشی که در موفقیت پروژه ایفا می‌کند اشاره کن.\nاطلاعات پروژه: ${appData.projectSummaryForAI}`;
             const response = await callGeminiAPI({ contents: [{ role: "user", parts: [{ text: prompt }] }] });
             button.disabled = false;
-            container.innerHTML = `<p class="text-sm text-slate-600 dark:text-slate-300 mt-4 text-right">${DOMPurify.sanitize(response.replace(/\n/g, '<br>'))}</p>`;
+            container.innerHTML = `<p class="text-sm text-slate-600 dark:text-slate-300 mt-4 text-right">${DOMPurify.sanitize((response || 'بیوگرافی در دسترس نیست.').replace(/\n/g, '<br>'))}</p>`;
         };
 
         const setupTeam = () => {
@@ -709,7 +726,7 @@
                 showLoading(ui.analyticsResult);
                 const prompt = `داده‌های اقتصادی زیر را تحلیل کن و یک گزارش حرفه‌ای شامل روندها، فرصت‌ها و ریسک‌های بالقوه ارائه بده:\n${input}\nاین تحلیل در چارچوب پروژه کهن‌بن است: ${appData.projectSummaryForAI}`;
                 const response = await callGeminiAPI({ contents: [{ role: 'user', parts: [{ text: prompt }] }] });
-                ui.analyticsResult.innerHTML = `<div class="prose prose-lg max-w-none text-slate-600 dark:text-slate-300">${DOMPurify.sanitize(response.replace(/\n/g, '<br>'))}</div>`;
+                ui.analyticsResult.innerHTML = `<div class="prose prose-lg max-w-none text-slate-600 dark:text-slate-300">${DOMPurify.sanitize((response || 'تحلیل در دسترس نیست.').replace(/\n/g, '<br>'))}</div>`;
             });
         };
 
@@ -787,7 +804,7 @@
             if (savedHistory.length > 0) {
                 savedHistory.forEach(msg => addMessage(msg.text, msg.type));
             } else {
-                 addMessage('سلام! من دستیار هوشمند کهن‌بن هستم. چطور می‌توانم به شما کمک کنم؟', 'bot', [ 'توکنیزاسیون چیست؟', 'مزایای کهن‌بن چیست؟', 'نقشه راه پروژه' ]);
+                 addMessage('سلام! من دستیار مدیریت هوشمند ملی کهن‌بن هستم. چطور می‌توانم به شما کمک کنم؟', 'bot', [ 'توکنیزاسیون چیست؟', 'مزایای کهن‌بن چیست؟', 'نقشه راه پروژه' ]);
             }
 
             ui.chatbotSend.addEventListener('click', handleChatSend);
