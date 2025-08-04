@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>کُهَن‌بُن: پلتفرم اقتصاد هوشمند ملی</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/21.6.16/i18next.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f8fafc; /* gray-50 */
+            color: #1e293b; /* slate-800 */
+            scroll-behavior: smooth;
+        }
+        /* Dark mode styles */
+        body.dark {
+            background-color: #0f172a; /* slate-900 */
+            color: #e2e8f0; /* slate-200 */
+        }
+        .dark .card {
+            background-color: #1e293b; /* slate-800 */
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2), 0 2px 4px -1px rgba(0,0,0,0.12);
+            border-color: #334155;
+        }
+        .dark .bg-white\/80 { background-color: rgba(30, 41, 59, 0.8); }
+        .dark .main-nav-btn { color: #f1f5f9; }
+        .dark .main-nav-btn.active { background-color: #0d9488; color: white; }
+        .dark .section-title { border-color: #14b8a6; }
+        .dark .text-slate-600 { color: #cbd5e1; }
+        .dark .text-gray-800 { color: #f1f5f9; }
+        .dark .text-red-600 { color: #f87171; }
+        .dark .text-teal-700 { color: #2dd4bf; }
+        .dark .bg-teal-50 { background-color: #115e59; }
+        .dark .bg-emerald-100 { background-color: #064e3b; }
+        .dark .ai-response-container, .dark .token-asset-tag, .dark .token-step { background-color: #334155; color: #e2e8f0; }
+        .dark .table-rank-good { background-color: #064e3b !important; color: #a7f3d0; }
+        .dark .table-rank-medium { background-color: #78350f !important; color: #fdba74; }
+        .dark .table-rank-bad { background-color: #7f1d1d !important; color: #fca5a5; }
+        .dark #chatbot-window { background-color: #1e293b; }
+        .dark #chatbot-messages { border-color: #334155; }
+        .dark #chatbot-input { background-color: #334155; border-color: #475569; color: #e2e8f0; }
+        .dark .message.user { background-color: #0d9488; }
+        .dark .message.bot { background-color: #334155; }
+        .dark .chat-suggestion { background-color: #334155; color: #94a3b8; border: 1px solid #475569; }
+        .dark .chat-suggestion:hover { background-color: #475569; }
+
+        /* --- General UI Improvements --- */
+        .section-title {
+            border-bottom: 3px solid #0d9488;
+            padding-bottom: 0.5rem;
+            display: inline-block;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+        }
+        .btn {
+            @apply px-6 py-3 rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:-translate-y-0.5;
+        }
+        .btn-primary {
+            @apply bg-teal-600 text-white hover:bg-teal-700;
+        }
+        .btn-secondary {
+            @apply bg-amber-500 text-white hover:bg-amber-600;
+        }
+        .ai-response-container {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            background-color: #f8fafc;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+        }
+        
+        /* --- Smooth Transition for Content Sections --- */
+        .content-section {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .content-section.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .main-nav-btn.active {
+            background-color: #14b8a6;
+            color: white;
+            font-weight: 700;
+        }
+        .main-nav-btn:focus, #chatbot-toggle:focus {
+            outline: 2px solid #14b8a6;
+            outline-offset: 2px;
+        }
+
+        /* --- Tokenization & Import Process Styles --- */
+        .token-asset-tag { @apply inline-block bg-teal-100 text-teal-800 text-sm font-medium mr-2 mb-2 px-3 py-1 rounded-full; }
+        .process-container { @apply flex flex-col md:flex-row items-center justify-between gap-4 mt-8; }
+        .process-step { @apply flex-1 text-center p-4 border border-dashed border-slate-300 rounded-lg flex flex-col items-center; }
+        .process-step-icon { @apply w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl mb-3; }
+        .process-step-arrow { @apply text-3xl text-slate-300 hidden md:block; }
+
+        /* --- Comparison Table Styles --- */
+        .comparison-table td, .comparison-table th { @apply px-4 py-4 text-center; }
+        .comparison-table thead th { @apply font-bold; }
+        .comparison-table tbody td:first-child { @apply font-semibold text-right; }
+        .table-rank-good { background-color: #f0fdf4; }
+        .table-rank-medium { background-color: #fffbeb; }
+        .table-rank-bad { background-color: #fef2f2; }
+        .table-rank-icon { @apply ml-2; }
+        @media (max-width: 768px) {
+            .comparison-table { display: block; }
+            .comparison-table thead { display: none; }
+            .comparison-table tbody { display: block; }
+            .comparison-table tr { display: flex; flex-wrap: wrap; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; }
+            .comparison-table td { flex: 1 1 100%; text-align: right; padding: 0.5rem; border: none; }
+            .comparison-table td:first-child { flex: 1 1 100%; font-weight: bold; background-color: #f1f5f9; padding: 0.75rem; border-radius: 0.5rem 0.5rem 0 0; }
+            .dark .comparison-table td:first-child { background-color: #334155; }
+            .comparison-table td::before { content: attr(data-label); font-weight: bold; margin-left: 10px; display: inline-block; }
+        }
+
+        /* --- Chatbot Styles --- */
+        #chatbot-toggle { position: fixed; bottom: 2rem; left: 2rem; width: 60px; height: 60px; border-radius: 50%; background-color: #0d9488; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; transition: transform 0.3s ease; }
+        #chatbot-toggle:hover { transform: scale(1.1); }
+        #chatbot-window { position: fixed; bottom: 6rem; left: 2rem; width: 350px; max-width: 90vw; height: 500px; background-color: white; border-radius: 1rem; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); z-index: 999; display: flex; flex-direction: column; overflow: hidden; transform: scale(0.95) translateY(10px); opacity: 0; visibility: hidden; transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease; }
+        #chatbot-window.open { transform: scale(1) translateY(0); opacity: 1; visibility: visible; }
+        #chatbot-header { padding: 1rem; background-color: #14b8a6; color: white; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        #chatbot-messages { flex-grow: 1; padding: 1rem; overflow-y: auto; border-bottom: 1px solid #e2e8f0; }
+        .message { padding: 0.5rem 1rem; border-radius: 1rem; margin-bottom: 0.5rem; max-width: 85%; word-wrap: break-word; }
+        .message.user { background-color: #14b8a6; color: white; margin-right: auto; border-bottom-right-radius: 0; }
+        .message.bot { background-color: #f1f5f9; color: #1e293b; margin-left: auto; border-bottom-left-radius: 0; }
+        #chatbot-input-container { display: flex; padding: 0.5rem; }
+        #chatbot-input { flex-grow: 1; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 0.5rem; outline: none; }
+        #chatbot-send { background: none; border: none; color: #14b8a6; font-size: 20px; cursor: pointer; padding: 0 0.5rem; }
+        .chat-suggestion { @apply bg-teal-50 text-teal-700 border border-teal-200 text-sm py-1 px-3 rounded-full cursor-pointer hover:bg-teal-100 transition-all; }
+
+        /* --- AI Feature specific styles --- */
+        .ai-loading-spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .dark .ai-loading-spinner { border-top: 4px solid #dbeafe; }
+        
+        /* --- Roadmap styles --- */
+        .timeline { position: relative; max-width: 1200px; margin: 0 auto; }
+        .timeline::after { content: ''; position: absolute; width: 6px; background-color: #e2e8f0; top: 0; bottom: 0; right: 31px; margin-right: -3px; }
+        .dark .timeline::after { background-color: #334155; }
+        .timeline-item { padding: 10px 40px; position: relative; background-color: inherit; width: 100%; padding-right: 100px; }
+        .timeline-item::after { content: ''; position: absolute; width: 25px; height: 25px; right: 18px; background-color: white; border: 4px solid #14b8a6; top: 15px; border-radius: 50%; z-index: 1; }
+        .dark .timeline-item::after { background-color: #1e293b; }
+        .timeline-content { position: relative; }
+
+        /* --- FAQ styles --- */
+        .faq-item details { @apply border-b border-slate-200 dark:border-slate-700 py-4; }
+        .faq-item summary { @apply font-bold text-lg cursor-pointer flex justify-between items-center; }
+        .faq-item summary::-webkit-details-marker { display: none; }
+        .faq-item summary::after { content: '\\f078'; font-family: 'Font Awesome 6 Free'; font-weight: 900; transition: transform 0.3s; }
+        .faq-item details[open] summary::after { transform: rotate(180deg); }
+        .faq-item .faq-answer { @apply pt-4 text-slate-600; }
+    </style>
+</head>
+<body class="antialiased">
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 transition-colors duration-300">
+        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="text-3xl font-extrabold text-teal-600">کُهَن‌بُن</h1>
+            <nav id="main-navigation" class="hidden md:flex space-x-reverse space-x-2">
+                <button data-target="vision" class="main-nav-btn px-4 py-2 rounded-md active">چشم‌انداز</button>
+                <button data-target="use-cases" class="main-nav-btn px-4 py-2 rounded-md">کاربردها</button>
+                <button data-target="ecosystem" class="main-nav-btn px-4 py-2 rounded-md">اکوسیستم</button>
+                <button data-target="revenue" class="main-nav-btn px-4 py-2 rounded-md">مدل درآمدی</button>
+                <button data-target="comparison" class="main-nav-btn px-4 py-2 rounded-md">مزیت رقابتی</button>
+                <button data-target="roadmap" class="main-nav-btn px-4 py-2 rounded-md">نقشه راه</button>
+                <button data-target="team-info" class="main-nav-btn px-4 py-2 rounded-md">تیم</button>
+                <button data-target="dashboard" class="main-nav-btn px-4 py-2 rounded-md">حساب کاربری</button>
+                <button data-target="analytics" class="main-nav-btn px-4 py-2 rounded-md">تحلیل پیشرفته</button>
+                <button data-target="faq" class="main-nav-btn px-4 py-2 rounded-md">سوالات متداول</button>
+            </nav>
+            <div class="flex items-center space-x-2 space-x-reverse">
+                 <button id="darkModeToggle" class="p-2 rounded-full hover:bg-slate-100 transition">
+                    <span class="dark-icon"> <i class="fa-solid fa-moon text-lg"></i> </span>
+                    <span class="light-icon hidden"> <i class="fa-solid fa-sun text-lg"></i> </span>
+                </button>
+                <button id="mobileMenuToggle" class="p-2 rounded-full hover:bg-slate-100 transition md:hidden">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <nav id="mobile-navigation" class="md:hidden hidden bg-white/80 backdrop-blur-md shadow-lg">
+            <div class="flex flex-col p-4 space-y-2">
+                 <button data-target="vision" class="main-nav-btn px-4 py-2 rounded-md active text-right">چشم‌انداز</button>
+                <button data-target="use-cases" class="main-nav-btn px-4 py-2 rounded-md text-right">کاربردها</button>
+                <button data-target="ecosystem" class="main-nav-btn px-4 py-2 rounded-md text-right">اکوسیستم</button>
+                <button data-target="revenue" class="main-nav-btn px-4 py-2 rounded-md text-right">مدل درآمدی</button>
+                <button data-target="comparison" class="main-nav-btn px-4 py-2 rounded-md text-right">مزیت رقابتی</button>
+                <button data-target="roadmap" class="main-nav-btn px-4 py-2 rounded-md text-right">نقشه راه</button>
+                <button data-target="team-info" class="main-nav-btn px-4 py-2 rounded-md text-right">تیم</button>
+                <button data-target="dashboard" class="main-nav-btn px-4 py-2 rounded-md text-right">حساب کاربری</button>
+                <button data-target="analytics" class="main-nav-btn px-4 py-2 rounded-md text-right">تحلیل پیشرفته</button>
+                <button data-target="faq" class="main-nav-btn px-4 py-2 rounded-md text-right">سوالات متداول</button>
+            </div>
+        </nav>
+    </header>
+    <main class="container mx-auto px-6 py-16">
+        <!-- SECTION: VISION (HOME) -->
+        <section id="vision" class="content-section active">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-6xl font-extrabold mb-4 leading-tight">شریان <span class="bg-clip-text text-transparent bg-gradient-to-r from-teal-500 to-emerald-600">اقتصاد هوشمند</span> ایران</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600 mb-8">
+                    کهن‌بن یک زیرساخت بلاکچین ملی، امن و کارآمد است که برای پاسخ به چالش‌های کلیدی اقتصاد ایران و توانمندسازی یک اکوسیستم دیجیتال شفاف و تاب‌آور طراحی شده است.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8 text-right">
+                <div class="card p-8">
+                    <h3 class="text-2xl font-bold mb-6 text-red-600">چالش‌های کلیدی اقتصاد ایران</h3>
+                    <div id="challenges-container" class="space-y-4"></div>
+                </div>
+                <div class="card bg-gradient-to-br from-teal-50 to-emerald-100 p-8">
+                    <h3 class="text-2xl font-bold mb-6 text-teal-700">راه‌حل‌های نوآورانه کهن‌بن</h3>
+                    <div id="solution-text" class="text-slate-700 min-h-[150px] p-4 bg-white/50 rounded-lg transition-all duration-300 flex items-center justify-center">
+                        <p class="text-center text-slate-500 font-medium">روی یکی از چالش‌ها کلیک کنید تا راه‌حل آن را ببینید.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- SECTION: USE CASES -->
+        <section id="use-cases" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="section-title text-3xl md:text-4xl font-bold mb-4">کاربردهای بنیادین کهن‌بن</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">دو کاربرد تحول‌آفرین کهن‌بن که به طور مستقیم چالش‌های کلیدی اقتصاد ایران را هدف قرار می‌دهند.</p>
+            </div>
+            <div id="use-cases-container" class="space-y-12"></div>
+        </section>
+        <!-- SECTION: ECOSYSTEM -->
+        <section id="ecosystem" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="section-title text-3xl md:text-4xl font-bold mb-4">اکوسیستم یکپارچه کهن‌بن</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">کهن‌بن با پیوند دادن منافع بازیگران کلیدی، یک اکوسیستم هم‌افزا مبتنی بر اعتماد و شفافیت ایجاد می‌کند.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 text-right" id="ecosystem-cards-container"></div>
+            <div class="text-center mt-6">
+                <button id="ai-partner-btn" class="btn btn-primary"><i class="fa-solid fa-sparkles ml-2"></i>ایده‌پردازی شریک جدید با هوش مصنوعی</button>
+            </div>
+            <div id="ai-partner-suggestion" class="card mt-8 hidden">
+                <h4 class="text-xl font-bold mb-4">پیشنهاد هوشمند برای شریک جدید:</h4>
+                <div class="prose prose-lg max-w-none text-slate-600" id="ai-partner-content"></div>
+            </div>
+        </section>
+        <!-- SECTION: REVENUE -->
+        <section id="revenue" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="section-title text-3xl md:text-4xl font-bold mb-4">مدل درآمدی پایدار و چندوجهی</h2>
+                <p id="revenue-intro-text" class="max-w-3xl mx-auto text-lg text-slate-600"></p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 text-right" id="revenue-model-container"></div>
+            <div class="card">
+                <h3 class="text-2xl font-bold text-center mb-6">تحلیل و پیش‌بینی مدل درآمدی</h3>
+                <div class="w-full h-80"><canvas id="revenue-chart"></canvas></div>
+                <div class="text-center mt-6">
+                    <button id="ai-revenue-analysis-btn" class="btn btn-primary"><i class="fa-solid fa-wand-magic-sparkles ml-2"></i>تحلیل هوشمند نمودار</button>
+                </div>
+                <div id="revenue-analysis-container" class="ai-response-container mt-6 hidden"></div>
+            </div>
+        </section>
+        <!-- SECTION: COMPARISON -->
+        <section id="comparison" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="section-title text-3xl md:text-4xl font-bold mb-4">مزیت رقابتی استراتژیک</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">کهن‌بن با ترکیب مزایای بلاکچین و انطباق با نیازهای بومی، جایگاهی منحصربه‌فرد در اقتصاد ایران دارد.</p>
+            </div>
+            <div id="comparison-table-container" class="overflow-x-auto card p-0"></div>
+        </section>
+        <!-- SECTION: ROADMAP -->
+        <section id="roadmap" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="section-title text-3xl md:text-4xl font-bold mb-4">نقشه راه توسعه</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">یک رویکرد مرحله‌ای و استراتژیک برای تضمین رشد پایدار و موفقیت پروژه در مقیاس ملی.</p>
+            </div>
+            <div class="timeline"></div>
+        </section>
+        <!-- SECTION: TEAM INFO -->
+        <section id="team-info" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="section-title text-3xl md:text-4xl font-bold mb-4">تیم بنیان‌گذار</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">متخصصان باتجربه در حوزه‌های بلاکچین، اقتصاد و مدیریت، گرد هم آمده‌اند تا چشم‌انداز کهن‌بن را محقق سازند.</p>
+            </div>
+            <div id="team-cards-container" class="grid md:grid-cols-2 gap-8 justify-center max-w-4xl mx-auto"></div>
+        </section>
+        <!-- SECTION: DASHBOARD -->
+        <section id="dashboard" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="section-title text-3xl md:text-4xl font-bold mb-4">حساب کاربری</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">مدیریت دارایی‌ها و تراکنش‌های خود در پلتفرم کهن‌بن.</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="text-xl font-bold mb-4">دارایی‌های توکنیزه‌شده</h3>
+                    <ul id="assets-list" class="space-y-2"></ul>
+                </div>
+                <div class="card">
+                    <h3 class="text-xl font-bold mb-4">تراکنش‌های اخیر</h3>
+                    <div id="transactions-list" class="space-y-2"></div>
+                </div>
+            </div>
+        </section>
+        <!-- SECTION: ADVANCED ANALYTICS -->
+        <section id="analytics" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="section-title text-3xl md:text-4xl font-bold mb-4">تحلیل پیشرفته</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">داده‌های خود را با ابزار هوش مصنوعی کهن‌بن تحلیل کنید.</p>
+            </div>
+            <div class="card">
+                <h3 class="text-xl font-bold mb-4">تحلیل داده‌های اقتصادی</h3>
+                <textarea id="analytics-input" class="w-full p-4 border rounded dark:bg-slate-800 dark:border-slate-600" rows="6" placeholder="داده‌های خود را اینجا وارد کنید (مثال: حجم تراکنش‌های ماهانه: ۱.۲م, ۲.۵م, ۳.۱م. درآمدها: ۱۰۰م, ۱۵۰م, ۲۰۰م)"></textarea>
+                <button id="analyze-data-btn" class="btn btn-primary mt-4"><i class="fa-solid fa-chart-line ml-2"></i>تحلیل داده‌ها</button>
+                <div id="analytics-result" class="ai-response-container mt-6 hidden"></div>
+            </div>
+        </section>
+        <!-- SECTION: FAQ -->
+        <section id="faq" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="section-title text-3xl md:text-4xl font-bold mb-4">سوالات متداول</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">پاسخ به سوالات رایج درباره پلتفرم کهن‌بن</p>
+            </div>
+            <div id="faq-container" class="space-y-4 max-w-4xl mx-auto"></div>
+        </section>
+    </main>
+    
+    <!-- AI Chatbot -->
+    <div id="chatbot-toggle" aria-label="باز کردن چت‌بات" aria-expanded="false"><i class="fa-solid fa-robot"></i></div>
+    <div id="chatbot-window">
+        <div id="chatbot-header">
+            <span>گفتگو با هوش مصنوعی کهن‌بُن</span>
+            <button id="chatbot-clear" class="text-sm text-white mr-2 hover:underline">پاک کردن</button>
+            <button id="chatbot-close" class="text-xl">&times;</button>
+        </div>
+        <div id="chatbot-messages"></div>
+        <div id="chatbot-input-container">
+            <input type="text" id="chatbot-input" placeholder="پیام خود را بنویسید...">
+            <button id="chatbot-send"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-white py-8 mt-16">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2025-2026 کهن‌بُن. تمامی حقوق محفوظ است.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Data model for the app
+        const appData = {
+            challenges: [
+                { id: 'transparency', title: 'فقدان شفافیت در فرآیندها', solution: 'استفاده از دفتر کل توزیع‌شده (DLT) برای ثبت غیرقابل تغییر داده‌ها در تمام مراحل، که امکان نظارت لحظه‌ای و شفاف را فراهم می‌کند.' },
+                { id: 'trust', title: 'کاهش اعتماد عمومی', solution: 'ارائه داده‌های تأییدپذیر و غیرقابل دستکاری و امکان ردیابی کامل فرآیندها برای افزایش اعتماد عمومی.' },
+                { id: 'liquidity', title: 'عدم نقدشوندگی دارایی‌ها', solution: 'توکنیزه کردن دارایی‌های غیرنقدشونده، افزایش نقدشوندگی آن‌ها در بازار ثانویه و تسهیل وثیقه‌گذاری.' },
+                { id: 'regulation', title: 'پیچیدگی و ابهام در مقررات', solution: 'ارائه یک چارچوب قانونی شفاف و بومی برای دارایی‌های دیجیتال، که به مشروعیت و پذیرش آن‌ها کمک می‌کند.' },
+                { id: 'supply_chain', title: 'ناکارآمدی در زنجیره تأمین', solution: 'ردیابی دقیق کالاها, کاهش اسناد کاغذی، و افزایش سرعت فرآیندها از طریق بهینه‌سازی زنجیره تأمین.' },
+                { id: 'sanctions', title: 'تحریم‌ها و محدودیت‌های خارجی', solution: 'ایجاد یک پلتفرم بومی و مستقل از زیرساخت‌های خارجی که تاب‌آوری اقتصاد ملی را در برابر فشارهای بیرونی افزایش می‌دهد.' },
+            ],
+            useCases: [
+                { id: 'tokenization', title: 'توکنیزه کردن دارایی‌های قابل تضمین', description: 'کُهَن‌بُن با ایجاد یک پل دیجیتال بین دارایی‌های فیزیکی و دنیای مالی، نقدینگی را به اقتصاد تزریق کرده و فرصت‌های جدیدی برای تأمین مالی و سرمایه‌گذاری خلق می‌کند.', icon: 'fa-solid fa-cubes-stacked', revenuePotential: 'ایجاد بازاری به ارزش بالقوه چند صد میلیارد دلار از طریق فعال‌سازی دارایی‌های راکد و دریافت کارمزد از تراکنش‌ها و خدمات اعتبارسنجی.' },
+                { id: 'supply_chain', title: 'بهینه‌سازی زنجیره تأمین و فرآیند واردات', description: 'با ایجاد شفافیت و قابلیت ردیابی سرتاسری، کهن‌بن فرآیندهای پیچیده واردات را ساده کرده، با قاچاق مقابله می‌کند و به عنوان یک ابزار استراتژیک، تاب‌آوری ملی را در برابر تحریم‌ها افزایش می‌دهد.', icon: 'fa-solid fa-truck-fast', revenuePotential: 'درآمدزایی از طریق ارائه خدمات ردیابی، اتوماسیون اسناد گمرکی و ایجاد پروفایل اعتباری برای تجار و شرکت‌های لجستیک.' }
+            ],
+            tokenizableAssets: ['املاک و اراضی', 'خودرو و وسایل نقلیه', 'سهام شرکت‌ها', 'سپرده‌های بانکی', 'طلا و سکه', 'تجهیزات صنعتی', 'محصولات کشاورزی', 'حقوق معنوی'],
+            tokenizationSteps: [
+                { title: 'تعیین نوع دارایی', icon: 'fa-solid fa-file-signature', description: 'کاربر نوع دارایی مورد نظر برای توکن‌سازی را از میان گزینه‌های پشتیبانی‌شده انتخاب می‌کند.' },
+                { title: 'استعلام از نهاد مرجع', icon: 'fa-solid fa-building-columns', description: 'اصالت و مالکیت دارایی از طریق API از نهاد دارنده اطلاعات (مانند سازمان ثبت اسناد) استعلام می‌شود.' },
+                { title: 'تأیید توسط نهاد امین', icon: 'fa-solid fa-stamp', description: 'یک نهاد معتمد (مانند بانک یا موسسه اعتباری) صلاحیت دارایی برای توکن‌سازی را تأیید نهایی می‌کند.' },
+                { title: 'صدور توکن در کهن‌بُن', icon: 'fa-solid fa-shield-halved', description: 'پس از تأیید نهایی، توکن نماینده دارایی در بلاکچین کهن‌بُن صادر و ثبت می‌گردد.' }
+            ],
+            importProcessSteps: [
+                { title: 'ثبت مبدأ و بارگیری', icon: 'fa-solid fa-warehouse', description: 'واردکننده اطلاعات مبدأ کالا و مشخصات محموله را در بلاکچین ثبت می‌کند.' },
+                { title: 'تأیید اسناد حمل', icon: 'fa-solid fa-file-invoice', description: 'اسناد کلیدی (مانند بارنامه و فاکتور) توسط نهادهای مربوطه تأیید و ثبت می‌شوند.' },
+                { title: 'ردیابی لحظه‌ای محموله', icon: 'fa-solid fa-ship', description: 'با هر گام از فرآیند واردات، اطلاعات موقعیت مکانی و وضعیت کالا به صورت خودکار به بلاکچین اضافه می‌شود.' },
+                { title: 'تسویه نهایی و ترخیص', icon: 'fa-solid fa-gavel', description: 'پس از ترخیص گمرکی، قرارداد هوشمند پرداخت‌ها را بر اساس شرایط از پیش تعیین‌شده انجام می‌دهد.' }
+            ],
+            ecosystem: [
+                { title: 'سازمان‌های دولتی', icon: '<i class="fa-solid fa-building-columns"></i>', content: 'افزایش شفافیت مالیاتی، کاهش فساد، نظارت دقیق بر اقتصاد و ارائه خدمات عمومی کارآمدتر.' },
+                { title: 'بانک‌ها و موسسات مالی', icon: '<i class="fa-solid fa-bank"></i>', content: 'ایجاد ابزارهای مالی نوین، کاهش ریسک اعتباری با وثیقه‌های دیجیتال، و تسهیل فرآیند اعطای وام.' },
+                { title: 'شرکت‌ها و کسب‌وکارها', icon: '<i class="fa-solid fa-industry"></i>', content: 'ردیابی شفاف زنجیره تأمین، کاهش جعل کالا، تسریع فرآیندهای گمرکی و افزایش اعتماد در تجارت.' },
+                { title: 'صاحبان دارایی‌ها', icon: '<i class="fa-solid fa-key"></i>', content: 'گشایش سرمایه از دارایی‌های راکد، افزایش نقدینگی و دسترسی به بازارهای جدید.' },
+                { title: 'سرمایه‌گذاران و شهروندان', icon: '<i class="fa-solid fa-users"></i>', content: 'دسترسی به فرصت‌های سرمایه‌گذاری جدید و متنوع، تضمین امنیت دارایی‌ها و شفافیت در قیمت‌گذاری.' },
+                { title: 'صرافی‌های دیجیتال', icon: '<i class="fa-solid fa-right-left"></i>', content: 'همکاری برد-برد از طریق Staking، تأمین نقدینگی برای توکن بومی، و بهره‌مندی از کارمزد تراکنش‌ها.' }
+            ],
+            revenueModel: {
+                intro: 'مدل درآمدی کهن‌بُن با ترکیب جریان‌های متنوع، پایداری مالی بلندمدت و رشد تصاعدی را تضمین می‌کند. این مدل شامل درآمدهای مبتنی بر حجم (کارمزد تراکنش) و درآمدهای مبتنی بر ارزش (خدمات ویژه) است تا همزمان با توسعه اکوسیستم، درآمد پلتفرم نیز به صورت پایدار افزایش یابد.',
+                streams: [
+                    { title: 'کارمزد خرد تراکنش', icon: '<i class="fa-solid fa-coins"></i>', content: 'دریافت کارمزد بسیار پایین بر اساس حجم عظیم تراکنش‌های روزمره. موتور اصلی جذب کاربر و اثر شبکه‌ای.' },
+                    { title: 'اشتراک ویژه (SaaS)', icon: '<i class="fa-solid fa-crown"></i>', content: 'ارائه APIهای پیشرفته و ابزارهای تحلیلی به شرکت‌ها و نهادهای بزرگ در ازای حق اشتراک.' },
+                    { title: 'هم‌افزایی با صرافی‌ها', icon: '<i class="fa-solid fa-handshake-angle"></i>', content: 'درآمد از کارمزد Staking، تبادل توکن بومی و بهره‌مندی از کارمزد تراکنش‌ها.' },
+                    { title: 'تحول زنجیره واردات', icon: '<i class="fa-solid fa-globe"></i>', content: 'درآمدزایی از طریق ثبت و ردیابی کالا، اتوماسیون اسناد گمرکی و ایجاد پروفایل اعتباری برای تجار.' }
+                ]
+            },
+            comparisonTable: {
+                headers: ['ویژگی/معیار', 'سیستم مالی سنتی', 'ارزهای دیجیتال جهانی', 'کُهَن‌بُن (بلاکچین ملی)'],
+                rows: [
+                    { feature: 'اعتبار و مشروعیت', traditional: 'قانونی', global: 'فاقد اعتبار رسمی', kohanbon: 'قانونی و بومی' },
+                    { feature: 'وضعیت نظارتی', traditional: 'تنظیم‌شده', global: 'بدون نظارت', kohanbon: 'منطبق با قوانین ملی' },
+                    { feature: 'مصرف انرژی', traditional: 'پایین', global: 'بسیار بالا (PoW)', kohanbon: 'بسیار پایین (PoS)' },
+                    { feature: 'تاب‌آوری در برابر تحریم', traditional: 'آسیب‌پذیر', global: 'تاب‌آور', kohanbon: 'تاب‌آور (زیرساخت داخلی)' },
+                    { feature: 'ریسک کلاهبرداری', traditional: 'متوسط', global: 'بالا', kohanbon: 'پایین (کنترل‌شده)' },
+                    { feature: 'سرعت و هزینه', traditional: 'کند و گران', global: 'متغیر', kohanbon: 'سریع و ارزان' },
+                    { feature: 'شفافیت', traditional: 'کم', global: 'بالا (ناشناس)', kohanbon: 'بالا (قابل مشاهده)' },
+                ]
+            },
+            roadmap: [
+                { phase: 'فاز ۱', period: '۱۴۰۴ / ۲۰۲۵-۲۰۲۶', title: 'توسعه هسته و پایلوت', content: 'تکمیل پایه فنی، یکپارچه‌سازی API، ممیزی‌های امنیتی و اجرای پایلوت‌های داخلی با شرکای کلیدی برای اعتبارسنجی عملکردهای اصلی.', technical: '**زیرساخت بلاکچین:** توسعه یک بلاکچین اختصاصی با الگوریتم اجماع **Delegated Proof of Stake (DPoS)** برای بهینه‌سازی سرعت و مقیاس‌پذیری. **قراردادهای هوشمند:** پیاده‌سازی ماشین مجازی سازگار با **EVM** برای پشتیبانی از قراردادهای هوشمند و توکن‌های استاندارد. **امنیت:** انجام ممیزی‌های امنیتی دقیق توسط تیم‌های متخصص داخلی و خارجی.' },
+                { phase: 'فاز ۲', period: '۱۴۰۵ / ۲۰۲۶-۲۰۲۷', title: 'یکپارچه‌سازی نظارتی', content: 'همکاری نزدیک با بانک مرکزی و نهادهای قانون‌گذار برای اطمینان از انطباق کامل، اخذ مجوزهای لازم و تأثیرگذاری بر توسعه چارچوب‌های قانونی بلاکچین ملی.', technical: '**API های سازمانی:** طراحی و توسعه APIهای امن و مستند برای اتصال مستقیم نهادهای دولتی و بانک‌ها. **هویت دیجیتال:** پیاده‌سازی سیستم **KYC (شناسایی مشتری)** و **AML (مقابله با پولشویی)** مبتنی بر بلاکچین برای احراز هویت قوی. **مقررات هوشمند:** ایجاد ابزارهایی برای نهادهای نظارتی جهت تعریف و اجرای قوانین در قالب قراردادهای هوشمند.' },
+                { phase: 'فاز ۳', period: '۱۴۰۶ / ۲۰۲۷-۲۰۲۸', title: 'راه‌اندازی بخش‌بندی‌شده', content: 'آغاز راه‌اندازی مرحله‌ای در بخش‌های با تأثیر بالا مانند زنجیره تأمین واردات یا خدمات مالی خاص برای نمایش مزایای ملموس و ایجاد انگیزه برای پذیرش گسترده‌تر.', technical: '**معماری ماژولار:** پیاده‌سازی معماری ماژولار برای پشتیبانی از کاربردهای متنوع (مانند توکنیزاسیون و زنجیره تأمین) به صورت مستقل. **پروتکل‌های میان‌زنجیره‌ای:** بررسی و پیاده‌سازی راهکارهای **interoperability** برای ارتباط امن با سایر بلاکچین‌های داخلی یا خصوصی. **بهینه‌سازی کارایی:** تمرکز بر بهبود کارایی تراکنش‌ها (TPS) و کاهش latency.' },
+                { phase: 'فاز ۴', period: '۱۴۰۷ به بعد / ۲۰۲۸ به بعد', title: 'گسترش اکوسیستم و پذیرش عمومی', content: 'ارائه ابزارهای جامع توسعه‌دهنده (SDK)، برگزاری هکاتون‌ها و برنامه‌های تشویقی برای پرورش یک جامعه توسعه‌دهنده پویا و ورود به بازارهای منطقه‌ای.', technical: '**ابزارهای توسعه‌دهنده:** انتشار **SDKs** و **APIs** برای زبان‌های برنامه‌نویسی مختلف (Python, JavaScript, Go). **حاکمیت غیرمتمرکز:** طراحی و پیاده‌سازی یک مدل **DAO (سازمان خودگردان غیرمتمرکز)** برای حاکمیت پروژه با مشارکت جامعه.' }
+            ],
+            team: [
+                { name: 'محمد جواد صحرایی', role: 'بنیانگذار و مدیرعامل', image: 'https://placehold.co/150x150/e2e8f0/1e293b?text=MJS', phone: '۰۹۱۰۲۷۹۹۹۵۷' },
+                { name: 'عرفان سلطانی', role: 'هم‌بنیانگذار (Co-founder)', image: 'https://placehold.co/150x150/e2e8f0/1e293b?text=ES', phone: '۰۹۹۱۴۱۸۲۷۱۳' }
+            ],
+            faq: [
+                { q: 'توکنیزاسیون چیست و چه مزیتی دارد؟', a: 'توکنیزاسیون فرآیند تبدیل دارایی‌های فیزیکی یا حقوقی (مانند ملک یا سهام) به توکن‌های دیجیتال در بلاکچین است. مزیت اصلی آن افزایش نقدشوندگی دارایی‌های راکد، تسهیل معاملات و امکان وثیقه‌گذاری آسان‌تر است.' },
+                { q: 'چگونه کهن‌بن امنیت پلتفرم را تضمین می‌کند؟', a: 'کهن‌بن از یک معماری چندلایه امنیتی بهره می‌برد: ۱. استفاده از بلاکچین خصوصی با الگوریتم اجماع بهینه (DPoS) که کنترل‌شده و کارآمد است. ۲. انجام ممیزی‌های امنیتی مستمر توسط تیم‌های متخصص. ۳. پیاده‌سازی سیستم‌های شناسایی مشتری (KYC) و مقابله با پولشویی (AML) برای جلوگیری از فعالیت‌های غیرقانونی.' },
+                { q: 'آیا کهن‌بن با قوانین ایران منطبق است؟', a: 'بله، یکی از اهداف اصلی کهن‌بن، همکاری نزدیک با نهادهای قانون‌گذار و بانک مرکزی برای ایجاد یک چارچوب قانونی شفاف و بومی برای دارایی‌های دیجیتال است. تمام فعالیت‌های پلتفرم در انطباق کامل با قوانین ملی خواهد بود.' },
+                { q: 'کارمزد تراکنش‌ها در کهن‌بن چقدر است؟', a: 'کارمزدها به گونه‌ای طراحی شده‌اند که بسیار پایین و مقرون‌به‌صرفه باشند تا امکان انجام حجم عظیم تراکنش‌های روزمره فراهم شود. مدل درآمدی اصلی بر پایه حجم تراکنش است و نه کارمزدهای سنگین.' }
+            ],
+            projectSummaryForAI: `پلتفرم کُهَن‌بُن یک زیرساخت بلاکچین ملی، امن و کارآمد برای اقتصاد ایران است. چشم‌انداز آن تبدیل شدن به "شریان اقتصاد هوشمند ایران" است. ماموریت آن پاسخگویی به چالش‌های کلیدی اقتصاد ایران (فقدان شفافیت، عدم نقدشوندگی دارایی‌ها، ناکارآمدی زنجیره تأمین، تحریم‌ها) و توانمندسازی یک اکوسیستم دیجیتال شفاف و تاب‌آور است. کاربردهای اصلی آن شامل توکنیزه کردن دارایی‌ها برای وثیقه‌گذاری و بهینه‌سازی زنجیره تأمین است. اکوسیستم آن شامل سازمان‌های دولتی، بانک‌ها، کسب‌وکارها، صاحبان دارایی، شهروندان و صرافی‌های دیجیتال است. مدل درآمدی آن چندوجهی و پایدار شامل کارمزد خرد تراکنش، اشتراک سازمانی (SaaS)، همکاری با صرافی‌ها و خدمات بهینه سازی زنجیره واردات است. مزیت رقابتی آن بومی بودن، انطباق با قوانین ملی، امنیت بالا، بهره‌وری انرژی (PoS/DPoS)، و تاب‌آوری در برابر تحریم‌ها است. نقشه راه آن چهار فاز از توسعه هسته تا گسترش اکوسیستم را شامل می‌شود. تیم بنیان‌گذار آن محمد جواد صحرایی (مدیرعامل) و عرفان سلطانی (هم‌بنیانگذار) هستند.`
+        };
+
+        // --- UI Elements ---
+        const ui = {
+            mainNavigation: document.getElementById('main-navigation'),
+            mobileNavigation: document.getElementById('mobile-navigation'),
+            mobileMenuToggle: document.getElementById('mobileMenuToggle'),
+            contentSections: document.querySelectorAll('.content-section'),
+            darkModeToggle: document.getElementById('darkModeToggle'),
+            challengesContainer: document.getElementById('challenges-container'),
+            solutionText: document.getElementById('solution-text'),
+            useCasesContainer: document.getElementById('use-cases-container'),
+            ecosystemCardsContainer: document.getElementById('ecosystem-cards-container'),
+            revenueIntroText: document.getElementById('revenue-intro-text'),
+            revenueModelContainer: document.getElementById('revenue-model-container'),
+            revenueChart: document.getElementById('revenue-chart'),
+            comparisonTableContainer: document.getElementById('comparison-table-container'),
+            roadmapContainer: document.querySelector('.timeline'),
+            teamCardsContainer: document.getElementById('team-cards-container'),
+            assetsList: document.getElementById('assets-list'),
+            transactionsList: document.getElementById('transactions-list'),
+            faqContainer: document.getElementById('faq-container'),
+            // Analytics section
+            analyticsInput: document.getElementById('analytics-input'),
+            analyzeDataBtn: document.getElementById('analyze-data-btn'),
+            analyticsResult: document.getElementById('analytics-result'),
+            // Chatbot
+            chatbotToggle: document.getElementById('chatbot-toggle'),
+            chatbotWindow: document.getElementById('chatbot-window'),
+            chatbotClose: document.getElementById('chatbot-close'),
+            chatbotMessages: document.getElementById('chatbot-messages'),
+            chatbotInput: document.getElementById('chatbot-input'),
+            chatbotSend: document.getElementById('chatbot-send'),
+            chatbotClear: document.getElementById('chatbot-clear'),
+        };
+
+        const aiElements = {
+            aiPartnerBtn: document.getElementById('ai-partner-btn'),
+            aiPartnerSuggestion: document.getElementById('ai-partner-suggestion'),
+            aiPartnerContent: document.getElementById('ai-partner-content'),
+            aiRevenueAnalysisBtn: document.getElementById('ai-revenue-analysis-btn'),
+            revenueAnalysisContainer: document.getElementById('revenue-analysis-container'),
+        };
+
+        const API_KEY = ""; // Your API key will be injected here
+        const API_MODEL = "gemini-2.5-flash-preview-05-20";
+        let revenueChartInstance = null;
+        let globalChartData = null; 
+        let conversationHistory = [];
+        
+        // --- Core Logic & Functions ---
+        /**
+         * Calls the Gemini API with exponential backoff.
+         * Note: In a production environment, this call should be proxied through a backend server
+         * to protect the API key. The user-provided `server.js` is a good example of this.
+         * @param {Object} payload - The API request payload.
+         * @returns {Promise<string|null>} The API response or null on failure.
+         */
+        const callGeminiAPI = async (payload) => {
+            let retries = 0;
+            const maxRetries = 5;
+            const delay = 1000;
+            while (retries < maxRetries) {
+                try {
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${API_KEY}`;
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`API error: ${response.statusText}`);
+                    const result = await response.json();
+                    return result?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+                } catch (error) {
+                    console.error('API call failed:', error);
+                    retries++;
+                    await new Promise(res => setTimeout(res, delay * Math.pow(2, retries)));
+                }
+            }
+             return 'متأسفانه، در حال حاضر امکان پاسخگویی وجود ندارد.';
+        };
+
+        const showLoading = (element) => {
+            element.innerHTML = `<div class="flex justify-center items-center py-4"><div class="ai-loading-spinner"></div><span class="mr-3 text-slate-500">در حال پردازش...</span></div>`;
+            element.classList.remove('hidden');
+        };
+
+        // --- UI Setup Functions ---
+        const setupNavigation = () => {
+            const navBtns = document.querySelectorAll('.main-nav-btn');
+            const toggleActiveSection = (targetId) => {
+                ui.contentSections.forEach(section => {
+                    section.classList.toggle('active', section.id === targetId);
+                });
+                navBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.target === targetId));
+            };
+            navBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggleActiveSection(btn.dataset.target);
+                    ui.mobileNavigation.classList.add('hidden');
+                });
+            });
+            ui.mobileMenuToggle.addEventListener('click', () => ui.mobileNavigation.classList.toggle('hidden'));
+        };
+
+        const setupChallenges = () => {
+            ui.challengesContainer.innerHTML = appData.challenges.map(challenge => `
+                <div class="card cursor-pointer flex justify-between items-center bg-white border border-red-200 text-red-700 hover:border-red-600 hover:bg-red-50 transition-all duration-300 p-4" data-solution="${challenge.solution}" data-title="${challenge.title}">
+                    <p class="font-semibold text-lg">${challenge.title}</p>
+                    <i class="fa-solid fa-arrow-left text-xl"></i>
+                </div>
+            `).join('');
+            
+            ui.challengesContainer.addEventListener('click', (e) => {
+                const card = e.target.closest('.card');
+                if (!card) return;
+                ui.challengesContainer.querySelectorAll('.card').forEach(c => c.classList.remove('bg-red-100'));
+                card.classList.add('bg-red-100');
+                ui.solutionText.innerHTML = `<h4 class="font-bold text-xl mb-2">${card.dataset.title}</h4><p class="text-slate-700 dark:text-slate-200">${card.dataset.solution}</p>`;
+            });
+        };
+        
+        const setupUseCases = () => {
+            ui.useCasesContainer.innerHTML = appData.useCases.map(useCase => {
+                let processHtml = '';
+                if (useCase.id === 'tokenization') {
+                    processHtml = `<h4 class="text-xl font-bold mb-6 text-center">فرآیند ۴ مرحله‌ای توکنیزاسیون</h4><div class="process-container">${appData.tokenizationSteps.map((step, index) => `<div class="process-step"><div class="process-step-icon bg-teal-600"><i class="${step.icon}"></i></div><h5 class="font-bold">${step.title}</h5><p class="text-sm text-slate-500 mt-1">${step.description}</p></div>${index < appData.tokenizationSteps.length - 1 ? '<div class="process-step-arrow"><i class="fa-solid fa-arrow-left"></i></div>' : ''}`).join('')}</div>`;
+                } else if (useCase.id === 'supply_chain') {
+                    processHtml = `<h4 class="text-xl font-bold mb-6 text-center">فرآیند ۴ مرحله‌ای بهینه‌سازی واردات</h4><div class="process-container">${appData.importProcessSteps.map((step, index) => `<div class="process-step"><div class="process-step-icon bg-teal-600"><i class="${step.icon}"></i></div><h5 class="font-bold">${step.title}</h5><p class="text-sm text-slate-500 mt-1">${step.description}</p></div>${index < appData.importProcessSteps.length - 1 ? '<div class="process-step-arrow"><i class="fa-solid fa-arrow-left"></i></div>' : ''}`).join('')}</div>`;
+                }
+                return `<div class="card"><header class="text-center mb-6"><i class="${useCase.icon} text-5xl text-teal-600 mb-4"></i><h3 class="text-3xl font-bold text-gray-800">${useCase.title}</h3><p class="mt-3 text-lg text-slate-600">${useCase.description}</p></header><div class="mt-8 border-t pt-8">${useCase.id === 'tokenization' ? `<h4 class="text-xl font-bold mb-4 text-center">دارایی‌های قابل توکنیزه شدن</h4><div class="flex flex-wrap justify-center gap-2 mb-8">${appData.tokenizableAssets.map(asset => `<span class="token-asset-tag">${asset}</span>`).join('')}</div>` : ''}${processHtml}</div><div class="mt-8 border-t pt-8 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-6"><h4 class="text-xl font-bold mb-2 text-center text-amber-700 dark:text-amber-400">پتانسیل درآمدی</h4><p class="text-center text-slate-600">${useCase.revenuePotential}</p></div></div>`;
+            }).join('');
+        };
+
+        const suggestNewPartner = async () => {
+            showLoading(aiElements.aiPartnerContent.parentElement);
+            aiElements.aiPartnerBtn.disabled = true;
+            const existingPartners = appData.ecosystem.map(p => p.title).join(', ');
+            const prompt = `با توجه به اطلاعات زیر در مورد اکوسیستم کهن‌بُن، یک شریک جدید و خلاقانه برای این پلتفرم پیشنهاد بده و توضیح بده که چگونه می‌تواند به اکوسیستم کمک کند. خروجی باید شامل عنوان (مثلا "تکنولوژی‌های پوشیدنی") و توضیحات (مثلا "یکپارچه‌سازی با سنسورهای... و ایجاد... ") باشد.\nاطلاعات پروژه کهن‌بُن: ${appData.projectSummaryForAI}\nشرکای فعلی: ${existingPartners}`;
+            const response = await callGeminiAPI({ contents: [{ role: "user", parts: [{ text: prompt }] }] });
+            aiElements.aiPartnerBtn.disabled = false;
+            if (response && typeof response === 'string') {
+                const lines = response.split('\n').filter(line => line.trim() !== '');
+                const title = DOMPurify.sanitize(lines[0] || 'پیشنهاد جدید');
+                const description = DOMPurify.sanitize(lines.slice(1).join('\n') || 'توضیحات ارائه نشده است.');
+                aiElements.aiPartnerContent.parentElement.classList.remove('hidden');
+                aiElements.aiPartnerContent.innerHTML = `<h5 class="text-xl font-bold text-teal-600">${title}</h5><p class="mt-2 text-slate-600 dark:text-slate-300">${description}</p>`;
+            } else {
+                aiElements.aiPartnerContent.innerHTML = `<p class="text-center text-red-500">متأسفانه، در حال حاضر امکان تولید ایده وجود ندارد.</p>`;
+            }
+        };
+
+        const setupEcosystem = () => {
+            ui.ecosystemCardsContainer.innerHTML = appData.ecosystem.map(player => `<div class="card flex flex-col items-center p-6 text-center"><div class="text-5xl text-teal-600 mb-4">${player.icon}</div><h4 class="text-xl font-bold mb-2">${player.title}</h4><p class="text-base text-slate-600">${player.content}</p></div>`).join('');
+            aiElements.aiPartnerBtn.addEventListener('click', suggestNewPartner);
+        };
+
+        const generateRevenueAnalysis = async () => {
+            showLoading(aiElements.revenueAnalysisContainer);
+            aiElements.aiRevenueAnalysisBtn.disabled = true;
+            const dataSummary = globalChartData.revenueStreams.map(stream => `${stream.name}: درآمد در سال ${globalChartData.years.join(', ')} به ترتیب ${stream.data.join(', ')} میلیون دلار است.`).join('\n');
+            const prompt = `با توجه به داده‌های پیش‌بینی درآمد پلتفرم کهن‌بن، یک تحلیل استراتژیک و حرفه‌ای بنویس. تحلیل باید شامل نکات کلیدی، فرصت‌ها و ریسک‌های احتمالی باشد.\nداده‌ها:\n${dataSummary}\nتحلیل خود را در چند پاراگراف ارائه بده.`;
+            const response = await callGeminiAPI({ contents: [{ role: "user", parts: [{ text: prompt }] }] });
+            aiElements.aiRevenueAnalysisBtn.disabled = false;
+            aiElements.revenueAnalysisContainer.innerHTML = `<div class="prose prose-lg max-w-none text-slate-600 dark:text-slate-300">${DOMPurify.sanitize(response.replace(/\n/g, '<br>'))}</div>`;
+        };
+
+        const renderRevenueChart = (chartData) => {
+            if (revenueChartInstance) revenueChartInstance.destroy();
+            const ctx = ui.revenueChart.getContext('2d');
+            const isDarkMode = document.body.classList.contains('dark');
+            const textColor = isDarkMode ? '#e2e8f0' : '#1e293b';
+            const gridColor = isDarkMode ? '#334155' : '#e2e8f0';
+            revenueChartInstance = new Chart(ctx, { type: 'bar', data: { labels: chartData.years, datasets: chartData.revenueStreams.map((stream, index) => ({ label: stream.name, data: stream.data, backgroundColor: ['#10b981', '#f59e0b', '#6366f1', '#ef4444'][index], borderColor: textColor, borderWidth: 1, borderRadius: 5, hoverBackgroundColor: ['#047857', '#b45309', '#4f46e5', '#be123c'][index] })) }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: false }, legend: { position: 'bottom', labels: { font: { family: 'Vazirmatn', size: 12 }, color: textColor, boxWidth: 20 }, }, tooltip: { rtl: true, bodyFont: { family: 'Vazirmatn' }, titleFont: { family: 'Vazirmatn', weight: 'bold' }, callbacks: { label: (context) => `${context.dataset.label}: ${context.raw} میلیون دلار` } } }, scales: { x: { stacked: true, grid: { color: gridColor }, ticks: { font: { family: 'Vazirmatn' }, color: textColor } }, y: { stacked: true, beginAtZero: true, grid: { color: gridColor }, ticks: { font: { family: 'Vazirmatn' }, color: textColor }, title: { display: true, text: 'درآمد (میلیون دلار)', font: { family: 'Vazirmatn' }, color: textColor } } }, animation: { duration: 1500, easing: 'easeOutQuart' } } });
+        };
+
+        const setupRevenueModel = () => {
+            ui.revenueIntroText.textContent = appData.revenueModel.intro;
+            ui.revenueModelContainer.innerHTML = appData.revenueModel.streams.map(model => `<div class="card flex flex-col items-center p-6 text-center h-full"><div class="text-4xl text-amber-500 mb-4">${model.icon}</div><h4 class="text-xl font-bold mb-2">${model.title}</h4><p class="text-sm text-slate-600">${model.content}</p></div>`).join('');
+            globalChartData = { years: ["۱۴۰۵", "۱۴۰۶", "۱۴۰۷", "۱۴۰۸", "۱۴۰۹"], revenueStreams: [ { name: "کارمزد خرد تراکنش", data: [0.5, 1.5, 4, 8, 15] }, { name: "اشتراک ویژه (SaaS)", data: [0.2, 0.8, 2, 5, 10] }, { name: "همکاری با صرافی‌ها", data: [0.1, 0.5, 1.5, 4, 8] }, { name: "خدمات زنجیره واردات", data: [0, 0.2, 1, 3, 6] } ] };
+            aiElements.aiRevenueAnalysisBtn.addEventListener('click', generateRevenueAnalysis);
+            // Lazy load chart rendering
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        renderRevenueChart(globalChartData);
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { rootMargin: '100px' });
+            observer.observe(ui.revenueChart);
+        };
+        
+        const setupComparison = () => {
+            const getRankClass = value => { const good = ['قانونی', 'قانونی و بومی', 'منطبق با قوانین ملی', 'پایین', 'بسیار پایین (PoS)', 'تاب‌آور', 'تاب‌آور (زیرساخت داخلی)', 'سریع و ارزان', 'بالا (قابل مشاهده)']; if (good.includes(value)) return 'table-rank-good'; if (['متوسط'].includes(value)) return 'table-rank-medium'; return 'table-rank-bad'; };
+            const getRankIcon = value => { const good = ['قانونی', 'قانونی و بومی', 'منطبق با قوانین ملی', 'پایین', 'بسیار پایین (PoS)', 'تاب‌آور', 'تاب‌آور (زیرساخت داخلی)', 'سریع و ارزان', 'بالا (قابل مشاهده)']; if (good.includes(value)) return 'fa-solid fa-check-circle text-green-600'; if (['متوسط', 'متغیر'].includes(value)) return 'fa-solid fa-minus-circle text-amber-600'; return 'fa-solid fa-times-circle text-red-600'; };
+            ui.comparisonTableContainer.innerHTML = `<table class="w-full text-base text-right table-auto comparison-table"><thead class="text-sm text-slate-700 uppercase bg-slate-100 dark:bg-slate-700 dark:text-slate-400"><tr>${appData.comparisonTable.headers.map(header => `<th class="px-6 py-3">${header}</th>`).join('')}</tr></thead><tbody>${appData.comparisonTable.rows.map(row => `<tr class="border-b dark:border-slate-700"><td class="px-6 py-4" data-label="${appData.comparisonTable.headers[0]}">${row.feature}</td><td class="${getRankClass(row.traditional)}" data-label="${appData.comparisonTable.headers[1]}"><i class="${getRankIcon(row.traditional)} table-rank-icon"></i>${row.traditional}</td><td class="${getRankClass(row.global)}" data-label="${appData.comparisonTable.headers[2]}"><i class="${getRankIcon(row.global)} table-rank-icon"></i>${row.global}</td><td class="${getRankClass(row.kohanbon)}" data-label="${appData.comparisonTable.headers[3]}"><i class="${getRankIcon(row.kohanbon)} table-rank-icon"></i>${row.kohanbon}</td></tr>`).join('')}</tbody></table>`;
+        };
+
+        const elaborateRoadmapPhase = async (phase, container, button) => {
+            showLoading(container);
+            button.disabled = true;
+            const prompt = `با توجه به اطلاعات فاز "${phase.title}" از نقشه راه پروژه کهن‌بن، این مرحله را با جزئیات بیشتری تشریح کن. تحلیل باید شامل موارد زیر باشد:\n1.  **اهداف اصلی (Key Objectives):**\n2.  **فعالیت‌های کلیدی (Key Activities):**\n3.  **ریسک‌های بالقوه (Potential Risks):**\n4.  **شاخص‌های کلیدی عملکرد (KPIs):**\n\nاطلاعات فاز:\n- عنوان: ${phase.title}\n- دوره زمانی: ${phase.period}\n- خلاصه: ${phase.content}\n- جزئیات فنی: ${phase.technical.replace(/\*\*/g, '')}\n\nپاسخ را به صورت متنی ساختاریافته با عنوان‌بندی مناسب ارائه بده.`;
+            const response = await callGeminiAPI({ contents: [{ role: "user", parts: [{ text: prompt }] }] });
+            button.disabled = false;
+            container.innerHTML = `<div class="prose prose-lg max-w-none text-slate-600 dark:text-slate-300">${DOMPurify.sanitize(response.replace(/\n/g, '<br>'))}</div>`;
+        };
+
+        const setupRoadmap = () => {
+            ui.roadmapContainer.innerHTML = appData.roadmap.map((item, index) => `<div class="timeline-item" id="roadmap-item-${index}"><div class="timeline-content card"><span class="font-bold text-teal-600">${item.phase} (${item.period})</span><h4 class="text-xl font-bold text-gray-800 dark:text-gray-100 mt-2">${item.title}</h4><p class="text-base text-slate-600 dark:text-slate-400 mt-2">${item.content}</p><button class="ai-roadmap-btn mt-4 text-teal-600 font-semibold flex items-center" data-index="${index}"><i class="fa-solid fa-wand-magic-sparkles ml-2"></i><span>تشریح با هوش مصنوعی</span></button><div class="ai-roadmap-container ai-response-container hidden mt-4"></div></div></div>`).join('');
+            document.querySelectorAll('.ai-roadmap-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const index = button.dataset.index;
+                    const phaseData = appData.roadmap[index];
+                    const container = button.nextElementSibling;
+                    elaborateRoadmapPhase(phaseData, container, button);
+                });
+            });
+        };
+
+        const generateTeamBio = async (member, container, button) => {
+            showLoading(container);
+            button.disabled = true;
+            const prompt = `یک بیوگرافی حرفه‌ای و جذاب برای ${member.name}، ${member.role} پروژه کهن‌بن بنویس. در بیوگرافی به تخصص، تجربه و نقشی که در موفقیت پروژه ایفا می‌کند اشاره کن.\nاطلاعات پروژه: ${appData.projectSummaryForAI}`;
+            const response = await callGeminiAPI({ contents: [{ role: "user", parts: [{ text: prompt }] }] });
+            button.disabled = false;
+            container.innerHTML = `<p class="text-sm text-slate-600 dark:text-slate-300 mt-4 text-right">${DOMPurify.sanitize(response.replace(/\n/g, '<br>'))}</p>`;
+        };
+
+        const setupTeam = () => {
+            ui.teamCardsContainer.innerHTML = appData.team.map((member, index) => `<div class="card flex flex-col items-center p-8 text-center"><img src="${member.image}" alt="تصویر ${member.name}" class="w-36 h-36 rounded-full mb-4 object-cover border-4 border-teal-500 shadow-lg"><h4 class="text-2xl font-bold">${member.name}</h4><p class="text-teal-600 font-semibold text-lg">${member.role}</p>${member.phone ? `<p class="text-base text-slate-600 mt-2 dir-ltr"><i class="fa-solid fa-phone text-teal-600 ml-2"></i><span>${member.phone}</span></p>` : ''}<button class="ai-team-btn btn btn-secondary text-sm py-2 px-4 mt-4" data-index="${index}"><i class="fa-solid fa-user-pen ml-2"></i>ایجاد بیوگرافی</button><div class="ai-team-container ai-response-container hidden mt-4 w-full"></div></div>`).join('');
+            document.querySelectorAll('.ai-team-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const index = button.dataset.index;
+                    const memberData = appData.team[index];
+                    const container = button.nextElementSibling;
+                    generateTeamBio(memberData, container, button);
+                });
+            });
+        };
+        
+        const setupDashboard = () => {
+            const assets = [ { name: 'املاک تهران', tokens: 100, value: '۵۰۰ میلیون تومان' }, { name: 'طلا', tokens: 50, value: '۲۵۰ میلیون تومان' } ];
+            const transactions = [ { id: 1, type: 'انتقال', amount: '۱۰ توکن', date: '۱۴۰۵/۰۱/۰۱' }, { id: 2, type: 'دریافت', amount: '۵ توکن', date: '۱۴۰۵/۰۱/۰۲' } ];
+            ui.assetsList.innerHTML = assets.map(asset => `<li class="text-slate-600 flex justify-between p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"><span>${asset.name} (توکن: ${asset.tokens})</span><span>${asset.value}</span></li>`).join('');
+            ui.transactionsList.innerHTML = `<input type="text" id="transaction-filter" placeholder="جستجوی تراکنش..." class="w-full p-2 mb-4 border rounded dark:bg-slate-800 dark:border-slate-600"><ul id="filtered-transactions" class="space-y-2">${transactions.map(tx => `<li class="text-slate-600 flex justify-between p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded" data-content="${tx.type} ${tx.amount} ${tx.date}"><span>${tx.type}: ${tx.amount}</span><span>${tx.date}</span></li>`).join('')}</ul>`;
+            document.getElementById('transaction-filter').addEventListener('input', (e) => {
+                const filter = e.target.value.toLowerCase();
+                document.querySelectorAll('#filtered-transactions li').forEach(li => {
+                    li.style.display = li.dataset.content.toLowerCase().includes(filter) ? '' : 'none';
+                });
+            });
+        };
+
+        const setupAdvancedAnalytics = () => {
+            ui.analyzeDataBtn.addEventListener('click', async () => {
+                const input = ui.analyticsInput.value;
+                if (!input) return;
+                showLoading(ui.analyticsResult);
+                const prompt = `داده‌های اقتصادی زیر را تحلیل کن و یک گزارش حرفه‌ای شامل روندها، فرصت‌ها و ریسک‌های بالقوه ارائه بده:\n${input}\nاین تحلیل در چارچوب پروژه کهن‌بن است: ${appData.projectSummaryForAI}`;
+                const response = await callGeminiAPI({ contents: [{ role: 'user', parts: [{ text: prompt }] }] });
+                ui.analyticsResult.innerHTML = `<div class="prose prose-lg max-w-none text-slate-600 dark:text-slate-300">${DOMPurify.sanitize(response.replace(/\n/g, '<br>'))}</div>`;
+            });
+        };
+
+        const setupFaq = () => {
+            ui.faqContainer.innerHTML = appData.faq.map(item => `
+                <div class="faq-item card p-0">
+                    <details>
+                        <summary class="p-6">${item.q}</summary>
+                        <div class="faq-answer px-6 pb-6">${item.a}</div>
+                    </details>
+                </div>
+            `).join('');
+        };
+
+        const setupChatbot = () => {
+            const addMessage = (text, type, suggestions = []) => {
+                const sanitizedText = DOMPurify.sanitize(text);
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+                messageDiv.innerHTML = sanitizedText.replace(/\n/g, '<br>');
+
+                if (suggestions.length > 0) {
+                    const suggestionsContainer = document.createElement('div');
+                    suggestionsContainer.className = 'flex flex-wrap gap-2 mt-3';
+                    suggestionsContainer.innerHTML = suggestions.map(s => `<button class="chat-suggestion" data-suggestion="${s}">${s}</button>`).join('');
+                    messageDiv.appendChild(suggestionsContainer);
+                }
+
+                ui.chatbotMessages.appendChild(messageDiv);
+                ui.chatbotMessages.scrollTop = ui.chatbotMessages.scrollHeight;
+
+                if (type !== 'loading') {
+                    let currentHistory = JSON.parse(localStorage.getItem('kohanbonChatHistory')) || [];
+                    currentHistory.push({ text: sanitizedText, type });
+                    localStorage.setItem('kohanbonChatHistory', JSON.stringify(currentHistory.slice(-20)));
+                    conversationHistory.push({ role: type === 'user' ? 'user' : 'model', parts: [{ text: sanitizedText }] });
+                    if (conversationHistory.length > 10) conversationHistory.shift();
+                }
+            };
+
+            const handleChatSend = async () => {
+                const userInput = ui.chatbotInput.value.trim();
+                if (!userInput) return;
+                addMessage(userInput, 'user');
+                ui.chatbotInput.value = '';
+                const loadingMessage = document.createElement('div');
+                loadingMessage.className = 'message bot flex items-center';
+                loadingMessage.innerHTML = '<div class="ai-loading-spinner"></div><span class="mr-2">در حال پاسخگویی...</span>';
+                ui.chatbotMessages.appendChild(loadingMessage);
+                ui.chatbotMessages.scrollTop = ui.chatbotMessages.scrollHeight;
+                const payload = { contents: [...conversationHistory, { role: 'user', parts: [{ text: `با توجه به این خلاصه پروژه: "${appData.projectSummaryForAI}". به این سوال پاسخ بده: ${userInput}` }] }] };
+                const botResponse = await callGeminiAPI(payload);
+                ui.chatbotMessages.removeChild(loadingMessage);
+                addMessage(botResponse || 'متأسفانه نمی‌توانم پاسخ دهم.', 'bot');
+            };
+
+            ui.chatbotToggle.addEventListener('click', () => {
+                const isOpen = ui.chatbotWindow.classList.toggle('open');
+                ui.chatbotToggle.setAttribute('aria-expanded', isOpen);
+            });
+            ui.chatbotClose.addEventListener('click', () => {
+                ui.chatbotWindow.classList.remove('open');
+                ui.chatbotToggle.setAttribute('aria-expanded', 'false');
+            });
+            ui.chatbotClear.addEventListener('click', () => {
+                localStorage.removeItem('kohanbonChatHistory');
+                conversationHistory = [];
+                ui.chatbotMessages.innerHTML = '';
+                addMessage('تاریخچه گفتگو پاک شد.', 'bot');
+            });
+            
+            let savedHistory = JSON.parse(localStorage.getItem('kohanbonChatHistory')) || [];
+            conversationHistory = savedHistory.map(msg => ({ role: msg.type === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] }));
+            
+            if (savedHistory.length > 0) {
+                savedHistory.forEach(msg => addMessage(msg.text, msg.type));
+            } else {
+                 addMessage('سلام! من دستیار هوشمند کهن‌بن هستم. چطور می‌توانم به شما کمک کنم؟', 'bot', [ 'توکنیزاسیون چیست؟', 'مزایای کهن‌بن چیست؟', 'نقشه راه پروژه' ]);
+            }
+
+            ui.chatbotSend.addEventListener('click', handleChatSend);
+            ui.chatbotInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleChatSend(); });
+            ui.chatbotMessages.addEventListener('click', (e) => {
+                if (e.target.classList.contains('chat-suggestion')) {
+                    ui.chatbotInput.value = e.target.dataset.suggestion;
+                    handleChatSend();
+                }
+            });
+        };
+
+        const setupDarkModeToggle = () => {
+            const toggle = (isDark) => {
+                document.body.classList.toggle('dark', isDark);
+                document.querySelector('.light-icon').classList.toggle('hidden', !isDark);
+                document.querySelector('.dark-icon').classList.toggle('hidden', isDark);
+                if (revenueChartInstance && globalChartData) {
+                    renderRevenueChart(globalChartData);
+                }
+            };
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+            let isInitiallyDark = localStorage.getItem('darkMode') === 'true' || (localStorage.getItem('darkMode') === null && prefersDark.matches);
+            toggle(isInitiallyDark);
+            prefersDark.addEventListener('change', (e) => { if (localStorage.getItem('darkMode') === null) toggle(e.matches); });
+            ui.darkModeToggle.addEventListener('click', () => { const isDark = !document.body.classList.contains('dark'); localStorage.setItem('darkMode', isDark); toggle(isDark); });
+        };
+
+        // --- Initialize the app ---
+        const initApp = () => {
+            setupNavigation();
+            setupChallenges();
+            setupUseCases();
+            setupEcosystem();
+            setupRevenueModel();
+            setupComparison();
+            setupRoadmap();
+            setupTeam();
+            setupDashboard();
+            setupAdvancedAnalytics();
+            setupFaq();
+            setupChatbot();
+            setupDarkModeToggle();
+        };
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
