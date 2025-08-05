@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>داشبورد کهن‌بن - سرمایه‌گذاران و شهروندان (نسخه پیشرفته)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- DOMPurify for security -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f0f9ff; /* sky-50 */
+        }
+        .card {
+            @apply bg-white rounded-xl shadow-sm p-6 border border-gray-200;
+        }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        
+        .tab-btn-side {
+            @apply flex items-center px-4 py-3 text-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition-colors;
+        }
+        .tab-btn-side.active {
+            @apply bg-cyan-600 text-white shadow-md;
+        }
+        .kpi-card {
+            @apply bg-white p-6 rounded-xl shadow-sm border border-gray-200;
+        }
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+        
+        /* Asset Card Styles */
+        .asset-card {
+            @apply bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer;
+        }
+        .asset-card-image {
+            @apply w-full h-48 object-cover;
+        }
+        .asset-card-content {
+            @apply p-4;
+        }
+        .asset-card-title {
+            @apply font-bold text-lg text-gray-800;
+        }
+        .asset-card-details {
+            @apply text-sm text-gray-500 mt-2 flex justify-between;
+        }
+        
+        /* Filter Button Styles */
+        .filter-btn {
+            @apply px-4 py-2 text-sm font-semibold rounded-full transition-colors duration-200;
+        }
+        .filter-btn.active {
+            @apply bg-cyan-600 text-white;
+        }
+        .filter-btn.inactive {
+            @apply bg-gray-200 text-gray-600 hover:bg-gray-300;
+        }
+
+        /* AI Feature Styles */
+        .ai-response-box {
+            @apply mt-4 p-4 bg-cyan-50 border border-cyan-200 rounded-lg text-sm text-cyan-900;
+        }
+        .ai-loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0891b2; /* cyan-600 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Custom Alert Modal */
+        #custom-alert-modal {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-sky-50">
+
+    <div id="app-wrapper" class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-800 text-white flex flex-col p-4 flex-shrink-0">
+            <div class="flex items-center gap-3 mb-10 border-b border-slate-700 pb-4">
+                <i class="fa-solid fa-users text-3xl text-cyan-400"></i>
+                <div>
+                    <h1 class="text-xl font-bold">پورتفولیوی شخصی</h1>
+                    <span class="text-sm text-slate-400">سرمایه‌گذاران</span>
+                </div>
+            </div>
+            <nav class="flex flex-col space-y-2">
+                <a href="#" class="tab-btn-side active" data-target="marketplace">
+                    <i class="fa-solid fa-store ml-3 w-5 text-center"></i>بازار سرمایه
+                </a>
+                <a href="#" class="tab-btn-side" data-target="portfolio">
+                    <i class="fa-solid fa-wallet ml-3 w-5 text-center"></i>سبد دارایی من
+                </a>
+                <a href="#" class="tab-btn-side" data-target="ai-assistant">
+                    <i class="fa-solid fa-robot ml-3 w-5 text-center"></i>برنامه‌ریز هوشمند
+                </a>
+                <a href="#" class="tab-btn-side" data-target="security">
+                    <i class="fa-solid fa-shield-alt ml-3 w-5 text-center"></i>امنیت و شفافیت
+                </a>
+            </nav>
+            <div class="mt-auto">
+                <div class="flex items-center gap-3 p-3 bg-slate-700 rounded-lg">
+                    <img src="https://placehold.co/40x40/e2e8f0/1e293b?text=I" class="rounded-full" alt="User Avatar">
+                    <div>
+                        <p class="font-bold">سرمایه‌گذار</p>
+                        <a href="#" class="text-xs text-cyan-400 hover:underline">خروج از حساب</a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            
+            <h1 class="text-3xl font-bold text-slate-800 mb-8" id="main-header-title">بازار سرمایه</h1>
+
+            <!-- Main Dashboard Area -->
+            <div>
+                <!-- Marketplace Section -->
+                <section id="marketplace" class="content-section active">
+                    <div class="card mb-6">
+                        <h3 class="font-bold mb-4">تحلیل هوشمند بازار</h3>
+                        <p class="text-gray-600 mb-4">از هوش مصنوعی بخواهید آخرین اخبار اقتصادی را تحلیل کرده و تأثیر آن بر دارایی‌های مختلف را پیش‌بینی کند.</p>
+                        <button id="ai-market-analysis-btn" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                            ✨ تحلیل روز بازار
+                        </button>
+                        <div id="ai-market-analysis-response" class="hidden ai-response-box"></div>
+                    </div>
+
+                    <div class="mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                        <div class="flex flex-wrap items-center gap-4" id="marketplace-filters">
+                            <span class="font-semibold">فیلتر:</span>
+                            <button class="filter-btn active" data-filter="all">همه</button>
+                            <button class="filter-btn inactive" data-filter="ملک">ملک</button>
+                            <button class="filter-btn inactive" data-filter="خودرو">خودرو</button>
+                            <button class="filter-btn inactive" data-filter="سهام">سهام</button>
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="asset-marketplace-container">
+                        <!-- Asset cards will be populated by JS -->
+                    </div>
+                </section>
+                
+                <!-- Portfolio Section -->
+                <section id="portfolio" class="content-section">
+                    <div class="grid lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-1 space-y-6">
+                            <div class="card text-center">
+                                <p class="text-gray-500">ارزش کل سبد دارایی</p>
+                                <p class="text-4xl font-bold text-cyan-600 my-2">۱۵۰,۰۰۰,۰۰۰ تومان</p>
+                                <p class="text-green-600 font-semibold">+۱۲.۵٪ سود کل</p>
+                            </div>
+                            <div class="card">
+                                 <h3 class="font-bold mb-4">ترکیب سبد دارایی</h3>
+                                <div class="chart-container h-64">
+                                    <canvas id="portfolioCompositionChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-2 card">
+                            <h3 class="font-bold mb-4">دارایی‌های من</h3>
+                             <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-gray-50 text-right text-sm font-semibold text-gray-600">
+                                        <tr>
+                                            <th class="p-4">دارایی</th>
+                                            <th class="p-4">تعداد توکن</th>
+                                            <th class="p-4">ارزش فعلی</th>
+                                            <th class="p-4">بازدهی</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="my-assets-table"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="card mt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold">تاریخچه تراکنش‌ها</h3>
+                            <button id="ai-transaction-report-btn" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2 text-sm">
+                                ✨ تهیه گزارش هوشمند
+                            </button>
+                        </div>
+                        <div id="ai-transaction-report-response" class="hidden ai-response-box mb-4"></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 text-right text-sm font-semibold text-gray-600">
+                                    <tr><th class="p-4">تاریخ</th><th class="p-4">نوع</th><th class="p-4">دارایی</th><th class="p-4">مبلغ</th></tr>
+                                </thead>
+                                <tbody id="transaction-history-table"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI Assistant Section -->
+                <section id="ai-assistant" class="content-section">
+                    <h2 class="text-2xl font-bold mb-6">برنامه‌ریز هوشمند</h2>
+                    
+                    <!-- New Feature: Financial Goal Planner -->
+                    <div class="card mb-6">
+                        <h3 class="font-bold mb-4 text-indigo-700">✨ برنامه‌ریز اهداف مالی</h3>
+                        <p class="text-gray-600 mb-4">برای آینده مالی خود برنامه‌ریزی کنید. هدف خود را مشخص کنید تا ما نقشه راه رسیدن به آن را ترسیم کنیم.</p>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <input id="ai-goal-name" type="text" placeholder="نام هدف (مثال: خرید خانه)" class="p-3 border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                            <input id="ai-goal-amount" type="number" placeholder="مبلغ هدف (تومان)" class="p-3 border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                            <input id="ai-goal-years" type="number" placeholder="زمان رسیدن (سال)" class="p-3 border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <button id="ai-plan-goal-btn" class="mt-6 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                            <i class="fa-solid fa-bullseye"></i> ترسیم نقشه راه
+                        </button>
+                        <div id="ai-goal-plan-response" class="hidden ai-response-box"></div>
+                    </div>
+                    
+                    <div class="card mb-6">
+                        <h3 class="font-bold mb-4">پیشنهاد سبد سرمایه‌گذاری</h3>
+                        <p class="text-gray-600 mb-4">اهداف خود را مشخص کنید تا هوش مصنوعی بهترین سبد دارایی را به شما پیشنهاد دهد.</p>
+                        <div class="grid md:grid-cols-3 gap-4">
+                             <input id="ai-invest-amount" type="number" placeholder="مبلغ سرمایه‌گذاری (تومان)" class="p-3 border-gray-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                             <select id="ai-risk-level" class="p-3 border-gray-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                <option value="محافظه‌کارانه">ریسک‌پذیری: محافظه‌کارانه</option>
+                                <option value="متعادل">ریسک‌پذیری: متعادل</option>
+                                <option value="جسورانه">ریسک‌پذیری: جسورانه</option>
+                            </select>
+                            <select id="ai-time-horizon" class="p-3 border-gray-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                <option value="کوتاه‌مدت (زیر ۱ سال)">افق زمانی: کوتاه‌مدت</option>
+                                <option value="میان‌مدت (۱ تا ۳ سال)">افق زمانی: میان‌مدت</option>
+                                <option value="بلندمدت (بیش از ۳ سال)">افق زمانی: بلندمدت</option>
+                            </select>
+                        </div>
+                         <button id="ai-suggest-portfolio-btn" class="mt-6 px-6 py-2 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> پیشنهاد سبد دارایی
+                        </button>
+                        <div id="ai-portfolio-suggestion-response" class="hidden ai-response-box"></div>
+                    </div>
+                     <div class="card">
+                        <h3 class="font-bold mb-4">شبیه‌سازی پورتفولیو</h3>
+                        <p class="text-gray-600 mb-4">یک سناریو را وارد کنید تا هوش مصنوعی تأثیر آن را بر سبد دارایی شما تحلیل کند.</p>
+                        <textarea id="ai-scenario-input" class="w-full p-3 border rounded-lg focus:ring-cyan-500 focus:border-cyan-500" rows="3" placeholder="مثال: اگر ۱۰ توکن از آپارتمان نیاوران را بفروشم و با پول آن سهام شرکت پایا بخرم، ریسک و بازدهی من چه تغییری می‌کند؟"></textarea>
+                         <button id="ai-simulate-scenario-btn" class="mt-4 px-6 py-2 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 flex items-center gap-2">
+                            <i class="fa-solid-gears"></i> اجرای شبیه‌سازی
+                        </button>
+                        <div id="ai-scenario-response" class="hidden ai-response-box"></div>
+                    </div>
+                </section>
+
+                <!-- Security Section -->
+                <section id="security" class="content-section">
+                    <h2 class="text-2xl font-bold mb-6">امنیت دارایی و شفافیت قیمت‌گذاری</h2>
+                    <div class="card">
+                        <p>در کهن‌بن، مالکیت شما بر دارایی‌ها از طریق فناوری بلاکچین تضمین می‌شود. هر توکن یک گواهی مالکیت دیجیتال و غیرقابل تغییر است که در دفتر کل توزیع‌شده ثبت شده است. این به معنای امنیت حداکثری و حذف ریسک‌های مرتبط با اسناد کاغذی و فرآیندهای سنتی است. قیمت‌ها نیز بر اساس عرضه و تقاضا در یک بازار شفاف و آزاد تعیین می‌شوند و تمام تاریخچه معاملات برای بررسی در دسترس است.</p>
+                    </div>
+                </section>
+                
+                <!-- Asset Detail Modal -->
+                <div id="asset-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <div class="p-6" id="asset-detail-content">
+                           <!-- JS will populate this -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Custom Alert Modal -->
+                <div id="custom-alert-modal" class="fixed top-5 right-5 bg-red-500 text-white py-3 px-5 rounded-lg shadow-lg z-50 opacity-0 hidden" style="transition: opacity 0.3s ease, transform 0.3s ease; transform: translateX(100%);">
+                    <p id="custom-alert-message"></p>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const API_KEY = ""; 
+            const API_MODEL = "gemini-2.5-flash-preview-05-20";
+
+            // --- Mock Data ---
+            const mockData = {
+                marketplaceAssets: [
+                    { id: 1, name: 'آپارتمان مسکونی در نیاوران', type: 'ملک', value: '۱۵ میلیارد تومان', tokenPrice: '۱,۵۰۰,۰۰۰ تومان', yield: '۴٪ سالانه', risk: 'پایین', image: 'https://placehold.co/600x400/06b6d4/ffffff?text=ملک+مسکونی' },
+                    { id: 2, name: 'دفتر اداری در سعادت‌آباد', type: 'ملک', value: '۱۰ میلیارد تومان', tokenPrice: '۱,۰۰۰,۰۰۰ تومان', yield: '۶٪ سالانه', risk: 'متوسط', image: 'https://placehold.co/600x400/0891b2/ffffff?text=ملک+تجاری' },
+                    { id: 3, name: 'خودرو بنز S500 مدل ۲۰۲۳', type: 'خودرو', value: '۲ میلیارد تومان', tokenPrice: '۲۰۰,۰۰۰ تومان', yield: 'N/A', risk: 'متوسط', image: 'https://placehold.co/600x400/0e7490/ffffff?text=خودرو' },
+                    { id: 4, name: 'سهام شرکت دانش‌بنیان "پایا"', type: 'سهام', value: '۵ میلیارد تومان', tokenPrice: '۵۰,۰۰۰ تومان', yield: 'متغیر', risk: 'بالا', image: 'https://placehold.co/600x400/155e75/ffffff?text=سهام' },
+                ],
+                myPortfolio: {
+                    composition: { labels: ['ملک مسکونی', 'ملک تجاری'], data: [67, 33] },
+                    assets: [
+                        { name: 'آپارتمان مسکونی در نیاوران', tokens: 50, value: '۷۵,۰۰۰,۰۰۰ تومان', roi: '+۱۵٪' },
+                        { name: 'دفتر اداری در سعادت‌آباد', tokens: 75, value: '۷۵,۰۰۰,۰۰۰ تومان', roi: '+۱۰٪' },
+                    ],
+                    transactions: [
+                        { date: '۱۴۰۴/۰۵/۰۱', type: 'خرید', asset: 'آپارتمان نیاوران', amount: '۶۵,۲۵۰,۰۰۰ تومان' },
+                        { date: '۱۴۰۴/۰۴/۱۵', type: 'خرید', asset: 'دفتر سعادت‌آباد', amount: '۶۸,۰۰۰,۰۰۰ تومان' },
+                    ]
+                }
+            };
+            
+            // --- UI Elements ---
+            const mainHeaderTitle = document.getElementById('main-header-title');
+            const tabButtons = document.querySelectorAll('.tab-btn-side');
+            const contentSections = document.querySelectorAll('.content-section');
+            const marketplaceContainer = document.getElementById('asset-marketplace-container');
+            const assetDetailModal = document.getElementById('asset-detail-modal');
+            const assetDetailContent = document.getElementById('asset-detail-content');
+            const marketplaceFilters = document.getElementById('marketplace-filters');
+            
+            // AI Feature Elements
+            const aiSuggestPortfolioBtn = document.getElementById('ai-suggest-portfolio-btn');
+            const aiPortfolioSuggestionResponse = document.getElementById('ai-portfolio-suggestion-response');
+            const aiSimulateScenarioBtn = document.getElementById('ai-simulate-scenario-btn');
+            const aiScenarioResponse = document.getElementById('ai-scenario-response');
+            const aiMarketAnalysisBtn = document.getElementById('ai-market-analysis-btn');
+            const aiMarketAnalysisResponse = document.getElementById('ai-market-analysis-response');
+            const aiTransactionReportBtn = document.getElementById('ai-transaction-report-btn');
+            const aiTransactionReportResponse = document.getElementById('ai-transaction-report-response');
+            const aiPlanGoalBtn = document.getElementById('ai-plan-goal-btn');
+            const aiGoalPlanResponse = document.getElementById('ai-goal-plan-response');
+
+            // --- Custom Alert ---
+            const alertModal = document.getElementById('custom-alert-modal');
+            const alertMessage = document.getElementById('custom-alert-message');
+            function showAlert(message) {
+                alertMessage.textContent = message;
+                alertModal.classList.remove('hidden');
+                setTimeout(() => {
+                    alertModal.classList.remove('opacity-0');
+                    alertModal.style.transform = 'translateX(0)';
+                }, 10);
+                setTimeout(() => {
+                    alertModal.classList.add('opacity-0');
+                    alertModal.style.transform = 'translateX(100%)';
+                    setTimeout(() => alertModal.classList.add('hidden'), 300);
+                }, 3000);
+            }
+
+            // --- Gemini API Call ---
+            const callGeminiAPI = async (prompt, jsonOutput = false) => {
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                if (jsonOutput) {
+                    payload.generationConfig = { responseMimeType: "application/json" };
+                }
+                let retries = 0;
+                while (retries < 3) {
+                    try {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${API_KEY}`, {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                        });
+                        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                        const result = await response.json();
+                        const textResponse = result?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+                        return jsonOutput ? JSON.parse(textResponse) : textResponse;
+                    } catch (error) {
+                        console.error('API call failed:', error);
+                        retries++;
+                        await new Promise(res => setTimeout(res, 1000 * retries));
+                    }
+                }
+                return jsonOutput ? null : 'متأسفانه در برقراری ارتباط با سرویس هوش مصنوعی مشکلی پیش آمده است.';
+            };
+
+            const showLoading = (element) => {
+                element.innerHTML = `<div class="flex items-center justify-center gap-2 p-4"><div class="ai-loading-spinner"></div><span>در حال پردازش...</span></div>`;
+                element.classList.remove('hidden');
+            };
+
+            // --- Render Functions ---
+            function renderMarketplace(filter = 'all') {
+                const filteredAssets = filter === 'all' 
+                    ? mockData.marketplaceAssets 
+                    : mockData.marketplaceAssets.filter(asset => asset.type.includes(filter));
+
+                marketplaceContainer.innerHTML = filteredAssets.map(asset => `
+                    <div class="asset-card" data-asset-id="${asset.id}" data-asset-type="${asset.type}">
+                        <img src="${asset.image}" alt="${asset.name}" class="asset-card-image">
+                        <div class="asset-card-content">
+                            <h3 class="asset-card-title">${asset.name}</h3>
+                            <p class="text-xs text-gray-400">${asset.type}</p>
+                            <div class="asset-card-details">
+                                <span>قیمت هر توکن</span>
+                                <span class="font-bold">${asset.tokenPrice}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            function renderPortfolio() {
+                 new Chart(document.getElementById('portfolioCompositionChart').getContext('2d'), {
+                    type: 'pie', data: { labels: mockData.myPortfolio.composition.labels, datasets: [{ data: mockData.myPortfolio.composition.data, backgroundColor: ['#06b6d4', '#0891b2'] }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {font: { family: 'Vazirmatn' }} } } }
+                });
+                const myAssetsTbody = document.getElementById('my-assets-table');
+                myAssetsTbody.innerHTML = mockData.myPortfolio.assets.map(a => `
+                    <tr class="border-b border-gray-200">
+                        <td class="p-4 font-bold">${a.name}</td>
+                        <td class="p-4">${a.tokens}</td>
+                        <td class="p-4">${a.value}</td>
+                        <td class="p-4 text-green-600 font-semibold">${a.roi}</td>
+                    </tr>
+                `).join('');
+                const transactionTbody = document.getElementById('transaction-history-table');
+                transactionTbody.innerHTML = mockData.myPortfolio.transactions.map(t => `
+                     <tr class="border-b border-gray-200">
+                        <td class="p-4">${t.date}</td>
+                        <td class="p-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">${t.type}</span></td>
+                        <td class="p-4">${t.asset}</td>
+                        <td class="p-4 font-semibold">${t.amount}</td>
+                    </tr>
+                `).join('');
+            }
+
+            function showAssetDetail(assetId) {
+                const asset = mockData.marketplaceAssets.find(a => a.id == assetId);
+                assetDetailContent.innerHTML = `
+                    <div class="flex justify-between items-center border-b pb-4 mb-4">
+                        <h2 class="text-2xl font-bold">${asset.name}</h2>
+                        <button id="close-modal-btn" class="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <img src="${asset.image}" class="rounded-lg w-full h-64 object-cover">
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">${asset.type}</p>
+                            <p class="text-3xl font-bold my-2">${asset.tokenPrice}</p>
+                            <p class="text-gray-600">قیمت هر توکن</p>
+                            <div class="mt-4 space-y-2">
+                                <div class="flex justify-between"><span class="text-gray-500">ارزش کل دارایی</span><span>${asset.value}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">بازدهی سالانه (تخمینی)</span><span>${asset.yield}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">سطح ریسک</span><span>${asset.risk}</span></div>
+                            </div>
+                            <button class="w-full mt-6 py-3 bg-cyan-600 text-white font-bold rounded-lg hover:bg-cyan-700">سرمایه‌گذاری</button>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <button id="ai-asset-insight-btn" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                            ✨ تحلیل هوشمند این دارایی
+                        </button>
+                        <div id="ai-asset-insight-response" class="hidden ai-response-box"></div>
+                    </div>
+                `;
+                assetDetailModal.classList.remove('hidden');
+                assetDetailModal.classList.add('flex');
+
+                document.getElementById('close-modal-btn').addEventListener('click', () => {
+                    assetDetailModal.classList.add('hidden');
+                    assetDetailModal.classList.remove('flex');
+                });
+                
+                document.getElementById('ai-asset-insight-btn').addEventListener('click', () => {
+                    const btn = document.getElementById('ai-asset-insight-btn');
+                    const responseBox = document.getElementById('ai-asset-insight-response');
+                    handleAIRequest(btn, responseBox, () => `شما یک مشاور سرمایه‌گذاری هستید. یک تحلیل کوتاه برای سرمایه‌گذاری در "${asset.name}" با ریسک "${asset.risk}" ارائه دهید. به یک فرصت کلیدی و یک ریسک اصلی این سرمایه‌گذاری اشاره کنید.`);
+                });
+            }
+
+            // --- Interactivity ---
+            tabButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = button.dataset.target;
+                    contentSections.forEach(section => section.classList.remove('active'));
+                    document.getElementById(targetId).classList.add('active');
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    mainHeaderTitle.innerText = button.innerText.trim();
+                });
+            });
+
+            marketplaceContainer.addEventListener('click', (e) => {
+                const card = e.target.closest('.asset-card');
+                if (card) {
+                    showAssetDetail(card.dataset.assetId);
+                }
+            });
+            
+            marketplaceFilters.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    marketplaceFilters.querySelectorAll('button').forEach(btn => {
+                        btn.classList.remove('active', 'bg-cyan-600', 'text-white');
+                        btn.classList.add('inactive', 'bg-gray-200', 'text-gray-600');
+                    });
+                    e.target.classList.add('active', 'bg-cyan-600', 'text-white');
+                    e.target.classList.remove('inactive', 'bg-gray-200', 'text-gray-600');
+                    renderMarketplace(e.target.dataset.filter);
+                }
+            });
+
+            // --- AI Features Logic ---
+            async function handleAIRequest(button, responseBox, promptGenerator, jsonOutput = false, responseRenderer = null) {
+                const originalHTML = button.innerHTML;
+                button.innerHTML = `<div class="ai-loading-spinner mx-auto" style="width:16px; height:16px; border-width:2px;"></div>`;
+                button.disabled = true;
+                showLoading(responseBox);
+                
+                const prompt = promptGenerator();
+                const response = await callGeminiAPI(prompt, jsonOutput);
+
+                if (response) {
+                    if (responseRenderer) {
+                        responseRenderer(response, responseBox);
+                    } else {
+                        responseBox.innerHTML = DOMPurify.sanitize(response.replace(/\n/g, '<br>'));
+                    }
+                } else {
+                    responseBox.innerHTML = 'خطا در دریافت پاسخ از هوش مصنوعی.';
+                }
+                
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            }
+            
+            aiSuggestPortfolioBtn.addEventListener('click', () => {
+                const amount = document.getElementById('ai-invest-amount').value;
+                if (!amount) {
+                    showAlert('لطفاً مبلغ سرمایه‌گذاری را وارد کنید.');
+                    return;
+                }
+                
+                handleAIRequest(aiSuggestPortfolioBtn, aiPortfolioSuggestionResponse, () => {
+                    const risk = document.getElementById('ai-risk-level').value;
+                    const horizon = document.getElementById('ai-time-horizon').value;
+                    const marketAssets = JSON.stringify(mockData.marketplaceAssets.map(a => ({name: a.name, type: a.type, risk: a.risk})));
+                    return `شما یک دستیار هوشمند سرمایه‌گذاری هستید. برای کاربری با ${amount} تومان سرمایه، سطح ریسک ${risk} و افق زمانی ${horizon}، یک سبد پیشنهادی ارائه دهید. دارایی‌های موجود در بازار: ${marketAssets}. پاسخ را در قالب یک JSON ارائه دهید که شامل یک کلید "summary" با توضیح یک جمله‌ای و یک کلید "portfolio" باشد که آرایه‌ای از اشیاء است. هر شیء باید شامل "name" (نام دارایی)، "percentage" (درصد تخصیص) و "reason" (دلیل کوتاه انتخاب) باشد.`;
+                }, true, (response, box) => {
+                    box.innerHTML = `
+                        <p class="font-bold mb-4">${response.summary}</p>
+                        <div class="grid md:grid-cols-2 gap-6 items-center">
+                            <div><canvas id="suggestion-chart"></canvas></div>
+                            <div class="space-y-2" id="suggestion-details"></div>
+                        </div>`;
+                    
+                    const detailsContainer = box.querySelector('#suggestion-details');
+                    response.portfolio.forEach(item => {
+                        detailsContainer.innerHTML += `<div class="p-3 bg-white rounded-lg border">
+                            <p class="font-bold">${item.name} (${item.percentage}%)</p>
+                            <p class="text-xs text-gray-600">${item.reason}</p>
+                        </div>`;
+                    });
+
+                    new Chart(document.getElementById('suggestion-chart').getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: response.portfolio.map(p => p.name),
+                            datasets: [{
+                                data: response.portfolio.map(p => p.percentage),
+                                backgroundColor: ['#06b6d4', '#0891b2', '#0e7490', '#155e75'],
+                                borderWidth: 2,
+                                borderColor: '#f0f9ff'
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                    });
+                });
+            });
+            
+            aiSimulateScenarioBtn.addEventListener('click', () => {
+                const scenario = document.getElementById('ai-scenario-input').value;
+                if (!scenario) {
+                    showAlert('لطفاً سناریوی خود را وارد کنید.');
+                    return;
+                }
+                handleAIRequest(aiSimulateScenarioBtn, aiScenarioResponse, () => {
+                    const myAssets = JSON.stringify(mockData.myPortfolio.assets);
+                    return `شما یک تحلیلگر مالی هوشمند هستید. پورتفولیوی فعلی کاربر شامل این دارایی‌هاست: ${myAssets}. کاربر سناریوی زیر را مطرح کرده است: "${scenario}". لطفاً تأثیر این سناریو را بر ترکیب ریسک و بازدهی احتمالی پورتفولیو در یک پاراگراف کوتاه تحلیل کن.`;
+                });
+            });
+
+            aiMarketAnalysisBtn.addEventListener('click', () => {
+                handleAIRequest(aiMarketAnalysisBtn, aiMarketAnalysisResponse, () => {
+                    return `شما یک تحلیلگر ارشد بازار مالی هستید. اینها اخبار مهم امروز هستند: "بانک مرکزی نرخ بهره را ۰.۲۵٪ افزایش داد"، "قانون جدید مالیات بر عایدی سرمایه املاک تصویب شد"، "یک شرکت خودروسازی بزرگ از مدل جدید برقی خود رونمایی کرد". لطفاً این اخبار را در یک پاراگراف خلاصه کرده و سپس تأثیر احتمالی هرکدام را بر بازار ملک، خودرو و سهام شرکت‌های دانش‌بنیان به صورت جداگانه تحلیل کنید.`;
+                });
+            });
+
+            aiTransactionReportBtn.addEventListener('click', () => {
+                handleAIRequest(aiTransactionReportBtn, aiTransactionReportResponse, () => {
+                    const transactions = JSON.stringify(mockData.myPortfolio.transactions);
+                    return `شما یک مدیر پورتفولیو هستید. این لیست تراکنش‌های اخیر یک سرمایه‌گذار است: ${transactions}. یک گزارش کوتاه و دوستانه در یک پاراگراف بنویس که فعالیت‌های سرمایه‌گذاری او را خلاصه کند. به کلیدی‌ترین سرمایه‌گذاری‌ها و روند کلی فعالیت (مثلاً تمرکز بر خرید یا فروش) اشاره کن.`;
+                });
+            });
+
+            aiPlanGoalBtn.addEventListener('click', () => {
+                const goalName = document.getElementById('ai-goal-name').value;
+                const goalAmount = document.getElementById('ai-goal-amount').value;
+                const goalYears = document.getElementById('ai-goal-years').value;
+                if (!goalName || !goalAmount || !goalYears) {
+                    showAlert('لطفاً تمام فیلدهای برنامه‌ریز هدف را پر کنید.');
+                    return;
+                }
+                handleAIRequest(aiPlanGoalBtn, aiGoalPlanResponse, () => {
+                    return `شما یک برنامه‌ریز مالی هستید. کاربری می‌خواهد برای هدف "${goalName}" به مبلغ ${goalAmount} تومان در طی ${goalYears} سال برنامه‌ریزی کند. سطح ریسک او را متعادل فرض کن. یک نقشه راه ساده ارائه بده که شامل "سرمایه‌گذاری ماهانه مورد نیاز" و "ترکیب پیشنهادی سبد دارایی" (مثلاً ۶۰٪ ملک، ۴۰٪ سهام) باشد. پاسخ را در قالب یک پاراگراف ارائه بده.`;
+                });
+            });
+            
+            // --- Initial Render ---
+            renderMarketplace();
+            renderPortfolio();
+        });
+    </script>
+
+</body>
+</html>
+

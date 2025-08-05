@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>داشبورد کهن‌بن - صاحبان دارایی‌ها (نسخه پیشرفته)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- DOMPurify for security -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .card {
+            @apply bg-white rounded-xl shadow-sm p-6 border border-gray-200;
+        }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        
+        .tab-btn-side {
+            @apply flex items-center px-4 py-3 text-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition-colors;
+        }
+        .tab-btn-side.active {
+            @apply bg-amber-600 text-white shadow-md;
+        }
+        .kpi-card {
+            @apply bg-white p-6 rounded-xl shadow-sm border border-gray-200 transition-transform duration-300 hover:scale-105 hover:shadow-lg;
+        }
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+        .table-header {
+            @apply bg-gray-50 text-right text-sm font-semibold text-gray-600 sticky top-0;
+        }
+        .table-cell {
+            @apply p-4 text-right text-sm text-gray-700 align-middle;
+        }
+        .status-badge {
+            @apply px-3 py-1 text-xs font-bold rounded-full;
+        }
+        .status-tokenized { @apply bg-green-100 text-green-800; }
+        .status-pending { @apply bg-yellow-100 text-yellow-800; }
+        .status-listed { @apply bg-blue-100 text-blue-800; }
+
+        /* Tokenization Wizard Styles */
+        .wizard-step {
+            @apply flex items-center gap-4 p-4 border-r-4 relative;
+        }
+        .wizard-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: 29px; /* (Icon width + padding - line width) / 2 */
+            top: 5rem;
+            height: calc(100% - 3.5rem);
+            width: 2px;
+            background-color: #e5e7eb; /* gray-200 */
+            z-index: 0;
+        }
+        .wizard-step.active { @apply border-amber-500 bg-amber-50; }
+        .wizard-step.inactive { @apply border-gray-300; }
+        .wizard-step.completed .step-icon { @apply bg-green-500 text-white; }
+        .wizard-step.completed::after { @apply bg-green-500; }
+
+        .step-icon {
+            @apply w-12 h-12 rounded-full flex items-center justify-center text-xl flex-shrink-0 z-10;
+        }
+        .wizard-step.active .step-icon { @apply bg-amber-500 text-white; }
+        .wizard-step.inactive .step-icon { @apply bg-gray-200 text-gray-500; }
+
+        /* AI Feature Styles */
+        .ai-response-box {
+            @apply mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900;
+        }
+        .ai-loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #d97706; /* amber-600 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Toast Notification */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            @apply flex items-center gap-4 p-4 rounded-lg shadow-lg text-white animate-fade-in-out;
+        }
+        .toast-success { @apply bg-green-600; }
+        .toast-error { @apply bg-red-600; }
+        .toast-info { @apply bg-blue-600; }
+        @keyframes fade-in-out {
+            0% { opacity: 0; transform: translateY(20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(20px); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div id="app-wrapper" class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-800 text-white flex flex-col p-4 flex-shrink-0">
+            <div class="flex items-center gap-3 mb-10 border-b border-slate-700 pb-4">
+                <i class="fa-solid fa-gem text-3xl text-amber-400"></i>
+                <div>
+                    <h1 class="text-xl font-bold">کهن‌بن</h1>
+                    <span class="text-sm text-slate-400">پورتفولیوی دارایی</span>
+                </div>
+            </div>
+            <nav class="flex flex-col space-y-2">
+                <a href="#" class="tab-btn-side active" data-target="overview">
+                    <i class="fa-solid fa-chart-pie ml-3 w-5 text-center"></i>نمای کلی
+                </a>
+                <a href="#" class="tab-btn-side" data-target="assets">
+                    <i class="fa-solid fa-wallet ml-3 w-5 text-center"></i>دارایی‌های من
+                </a>
+                <a href="#" class="tab-btn-side" data-target="tokenize">
+                    <i class="fa-solid fa-plus-circle ml-3 w-5 text-center"></i>توکنیزاسیون جدید
+                </a>
+                 <a href="#" class="tab-btn-side" data-target="loan-collateral">
+                    <i class="fa-solid fa-hand-holding-dollar ml-3 w-5 text-center"></i>وام و وثیقه
+                </a>
+                <a href="#" class="tab-btn-side" data-target="marketplace">
+                    <i class="fa-solid fa-store ml-3 w-5 text-center"></i>بازار
+                </a>
+                <a href="#" class="tab-btn-side" data-target="analytics">
+                    <i class="fa-solid fa-calculator ml-3 w-5 text-center"></i>تحلیل پورتفولیو
+                </a>
+            </nav>
+            <div class="mt-auto text-center text-xs text-slate-500">
+                <p>نسخه ۱.۱.۰</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col">
+            <!-- Header -->
+            <header class="bg-white/80 backdrop-blur-sm border-b border-gray-200 p-4 flex justify-between items-center sticky top-0 z-20">
+                <h1 class="text-2xl font-bold text-slate-800" id="main-header-title">نمای کلی پورتفولیو</h1>
+                <div class="flex items-center gap-5">
+                    <div class="relative">
+                        <button id="notifications-btn" class="text-slate-500 hover:text-amber-600">
+                            <i class="fa-solid fa-bell text-xl"></i>
+                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">۳</span>
+                        </button>
+                        <div id="notifications-panel" class="hidden absolute left-0 mt-2 w-80 bg-white rounded-lg shadow-xl border z-30">
+                           <div class="p-3 font-bold border-b">اعلان‌ها</div>
+                           <div class="p-2 text-sm">
+                               <a href="#" class="block p-2 hover:bg-slate-50 rounded-md">
+                                   <p class="font-semibold">ارزیابی تکمیل شد</p>
+                                   <p class="text-xs text-gray-500">ارزش‌گذاری "آپارتمان نیاوران" به‌روز شد.</p>
+                               </a>
+                               <a href="#" class="block p-2 hover:bg-slate-50 rounded-md">
+                                   <p class="font-semibold">پیشنهاد وام جدید</p>
+                                   <p class="text-xs text-gray-500">یک پیشنهاد وام از بانک سامان دریافت کردید.</p>
+                               </a>
+                               <a href="#" class="block p-2 hover:bg-slate-50 rounded-md">
+                                   <p class="font-semibold text-gray-400">یادآوری</p>
+                                   <p class="text-xs text-gray-400">اسناد "خودرو بنز" در انتظار بارگذاری است.</p>
+                               </a>
+                           </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <img src="https://placehold.co/40x40/e2e8f0/1e293b?text=A" class="rounded-full" alt="User Avatar">
+                        <div>
+                            <p class="font-bold">صاحب دارایی</p>
+                            <a href="#" class="text-xs text-amber-600 hover:underline">خروج از حساب</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-8 overflow-y-auto flex-1">
+                <!-- KPIs -->
+                <section id="kpi-section" class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                     <div class="kpi-card">
+                        <p class="text-gray-500 font-semibold">ارزش کل دارایی‌ها</p>
+                        <p class="text-3xl font-bold text-green-600">۲۷ میلیارد تومان</p>
+                    </div>
+                    <div class="kpi-card">
+                        <p class="text-gray-500 font-semibold">ارزش بازار توکن‌ها</p>
+                        <p class="text-3xl font-bold text-blue-600">۲۹.۵ میلیارد تومان</p>
+                    </div>
+                    <div class="kpi-card">
+                        <p class="text-gray-500 font-semibold">قدرت استقراض</p>
+                        <p class="text-3xl font-bold text-purple-600">۱۴.۷ میلیارد تومان</p>
+                    </div>
+                    <div class="kpi-card">
+                        <p class="text-gray-500 font-semibold">بازدهی کل</p>
+                        <p class="text-3xl font-bold text-amber-600">+۹.۲٪</p>
+                    </div>
+                </section>
+
+                <!-- Main Dashboard Area -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <!-- Tab Content -->
+                    <div>
+                        <!-- Overview Section -->
+                        <section id="overview" class="content-section active">
+                            <div class="grid lg:grid-cols-2 gap-6">
+                                <div class="card">
+                                    <h3 class="font-bold mb-4">عملکرد پورتفولیو (۶ ماه اخیر)</h3>
+                                    <div class="chart-container">
+                                        <canvas id="portfolioPerformanceChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <h3 class="font-bold mb-4">ترکیب دارایی‌ها</h3>
+                                    <div class="chart-container h-[300px] mt-8">
+                                        <canvas id="assetCompositionChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        
+                        <!-- My Assets Section -->
+                        <section id="assets" class="content-section">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-2xl font-bold">لیست دارایی‌های من</h2>
+                                <div class="flex items-center gap-2">
+                                    <input type="text" id="asset-search-input" placeholder="جستجوی دارایی..." class="p-2 border rounded-md text-sm">
+                                    <select id="asset-status-filter" class="p-2 border rounded-md text-sm">
+                                        <option value="all">همه وضعیت‌ها</option>
+                                        <option value="توکنیزه شده">توکنیزه شده</option>
+                                        <option value="لیست شده در بازار">لیست شده در بازار</option>
+                                        <option value="در حال ارزیابی">در حال ارزیابی</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead class="table-header">
+                                            <tr>
+                                                <th class="table-cell">دارایی</th>
+                                                <th class="table-cell">ارزش ارزیابی‌شده</th>
+                                                <th class="table-cell">ارزش بازار</th>
+                                                <th class="table-cell">وضعیت</th>
+                                                <th class="table-cell">عملیات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="assets-table-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
+                        
+                        <!-- Tokenize Section -->
+                        <section id="tokenize" class="content-section">
+                            <h2 class="text-2xl font-bold mb-6">شروع فرآیند توکنیزاسیون جدید</h2>
+                            <div class="grid lg:grid-cols-3 gap-8">
+                                <div class="lg:col-span-1">
+                                    <div class="space-y-4">
+                                        <div id="wizard-step-1" class="wizard-step active">
+                                            <div class="step-icon">۱</div>
+                                            <div>
+                                                <p class="font-bold">اطلاعات دارایی</p>
+                                                <p class="text-sm text-gray-500">نوع و مشخصات دارایی را وارد کنید.</p>
+                                            </div>
+                                        </div>
+                                        <div id="wizard-step-2" class="wizard-step inactive">
+                                            <div class="step-icon">۲</div>
+                                            <div>
+                                                <p class="font-bold">بارگذاری اسناد</p>
+                                                <p class="text-sm text-gray-500">مدارک مالکیت را بارگذاری کنید.</p>
+                                            </div>
+                                        </div>
+                                        <div id="wizard-step-3" class="wizard-step inactive">
+                                            <div class="step-icon">۳</div>
+                                            <div>
+                                                <p class="font-bold">تایید و ارزیابی</p>
+                                                <p class="text-sm text-gray-500">منتظر تایید کارشناسان ما بمانید.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="lg:col-span-2 card">
+                                    <h3 class="font-bold mb-4">۱. اطلاعات دارایی</h3>
+                                    <label class="block text-sm font-medium text-gray-700">نوع دارایی</label>
+                                    <select id="asset-type-select" class="mt-1 block w-full p-2 border-gray-300 rounded-md">
+                                        <option>ملک مسکونی</option>
+                                        <option>ملک تجاری</option>
+                                        <option>خودرو</option>
+                                        <option>سهام غیربورسی</option>
+                                    </select>
+                                    <button id="ai-doc-assistant-btn" class="mt-6 w-full py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> راهنمای هوشمند ملی مدارک
+                                    </button>
+                                    <div id="ai-doc-assistant-response" class="hidden ai-response-box"></div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Loan & Collateral Section -->
+                        <section id="loan-collateral" class="content-section">
+                            <h2 class="text-2xl font-bold mb-6">درخواست وام با وثیقه دیجیتال</h2>
+                             <div class="grid lg:grid-cols-2 gap-6">
+                                <div class="card">
+                                     <h3 class="font-bold mb-4">دستیار هوشمند ملی درخواست وام</h3>
+                                     <p class="text-sm text-gray-500 mb-4">اطلاعات زیر را تکمیل کنید تا مدیریت هوشمند ملی یک پیش‌نویس حرفه‌ای برای درخواست وام شما آماده کند.</p>
+                                     <div class="grid md:grid-cols-2 gap-4">
+                                         <div>
+                                             <label class="block text-sm font-medium text-gray-700">مبلغ درخواستی (تومان)</label>
+                                             <input type="number" id="loan-amount" placeholder="مثال: 5000000000" class="mt-1 block w-full p-2 border-gray-300 rounded-md">
+                                         </div>
+                                         <div>
+                                             <label class="block text-sm font-medium text-gray-700">وثیقه اصلی</label>
+                                             <select id="loan-collateral-asset" class="mt-1 block w-full p-2 border-gray-300 rounded-md">
+                                                 <option>آپارتمان نیاوران</option>
+                                                 <option>دفتر اداری سعادت‌آباد</option>
+                                             </select>
+                                         </div>
+                                     </div>
+                                     <button id="ai-loan-assistant-btn" class="mt-6 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> آماده‌سازی پیش‌نویس
+                                    </button>
+                                    <div id="ai-loan-assistant-response" class="hidden ai-response-box"></div>
+                                </div>
+                                <div class="card">
+                                    <h3 class="font-bold mb-4">تاریخچه درخواست‌های وام</h3>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                                            <div>
+                                                <p class="font-semibold">وام ۵ میلیارد تومانی</p>
+                                                <p class="text-xs text-gray-500">وثیقه: آپارتمان نیاوران</p>
+                                            </div>
+                                            <span class="status-badge status-tokenized">تایید شده</span>
+                                        </div>
+                                        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                                            <div>
+                                                <p class="font-semibold">وام ۲ میلیارد تومانی</p>
+                                                <p class="text-xs text-gray-500">وثیقه: دفتر اداری سعادت‌آباد</p>
+                                            </div>
+                                            <span class="status-badge status-pending">در حال بررسی</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Marketplace Section -->
+                        <section id="marketplace" class="content-section">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-2xl font-bold">بازار ثانویه</h2>
+                                <button id="ai-market-analysis-btn" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> تحلیل هوشمند ملی بازار
+                                </button>
+                            </div>
+                            <div id="ai-market-analysis-response" class="hidden ai-response-box mb-6"></div>
+                            <div class="card">
+                                <h3 class="font-bold mb-4">دارایی‌های لیست‌شده شما</h3>
+                                <div class="text-center py-10">
+                                    <i class="fa-solid fa-store-slash text-5xl text-gray-300 mb-4"></i>
+                                    <p class="text-gray-500 mb-4">در حال حاضر هیچ دارایی برای فروش لیست نشده است.</p>
+                                    <button class="px-6 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700">لیست کردن اولین دارایی</button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Analytics Section -->
+                        <section id="analytics" class="content-section">
+                            <h2 class="text-2xl font-bold mb-6">تحلیل و بهینه‌سازی پورتفولیو</h2>
+                            <div class="grid lg:grid-cols-2 gap-6">
+                                <div class="card">
+                                    <h3 class="font-bold mb-4">دستیار هوشمند ملی سرمایه‌گذاری</h3>
+                                    <p class="text-sm text-gray-500 mb-4">هدف اصلی خود را مشخص کنید تا مدیریت هوشمند ملی بهترین استراتژی را برای پورتفولیوی شما پیشنهاد دهد.</p>
+                                    <select id="optimization-goal" class="block w-full p-2 border-gray-300 rounded-md">
+                                        <option value="افزایش نقدینگی">افزایش نقدینگی</option>
+                                        <option value="رشد پایدار سرمایه">رشد پایدار سرمایه</option>
+                                        <option value="کاهش ریسک">کاهش ریسک</option>
+                                    </select>
+                                    <button id="ai-portfolio-optimizer-btn" class="mt-4 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> دریافت پیشنهاد
+                                    </button>
+                                    <div id="ai-portfolio-optimizer-response" class="hidden ai-response-box"></div>
+                                </div>
+                                 <div class="card">
+                                    <h3 class="font-bold mb-4">مشاور هوشمند ملی مالیاتی و حقوقی</h3>
+                                    <p class="text-sm text-gray-500 mb-4">سوالات خود را در مورد پیامدهای مالیاتی و حقوقی معاملات توکن‌ها بپرسید.</p>
+                                    <textarea id="compliance-question" class="w-full p-2 border rounded-md" rows="2" placeholder="مثال: مالیات بر فروش توکن ملک مسکونی چگونه محاسبه می‌شود؟"></textarea>
+                                    <button id="ai-compliance-btn" class="mt-4 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> دریافت پاسخ
+                                    </button>
+                                    <div id="ai-compliance-response" class="hidden ai-response-box"></div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <div id="toast-container"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- App State and Configuration ---
+            const app = {
+                apiKey: "", // IMPORTANT: Add your Gemini API Key here
+                apiModel: "gemini-2.5-flash-preview-05-20",
+                mockData: {
+                    performance: { labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'], data: [27, 27.5, 28, 28.2, 29, 29.5] },
+                    composition: { labels: ['املاک مسکونی', 'املاک تجاری', 'خودرو'], data: [60, 30, 10] },
+                    assets: [
+                        { name: 'آپارتمان نیاوران', appraised: '۱۵ میلیارد تومان', market: '۱۶.۵ میلیارد تومان', status: 'توکنیزه شده' },
+                        { name: 'دفتر اداری سعادت‌آباد', appraised: '۱۰ میلیارد تومان', market: '۱۱ میلیارد تومان', status: 'لیست شده در بازار' },
+                        { name: 'خودرو بنز S500', appraised: '۲ میلیارد تومان', market: '۲ میلیارد تومان', status: 'در حال ارزیابی' },
+                        { name: 'زمین زعفرانیه', appraised: '۲۰ میلیارد تومان', market: '۲۲ میلیارد تومان', status: 'توکنیزه شده' },
+                    ]
+                },
+                elements: {
+                    mainHeaderTitle: document.getElementById('main-header-title'),
+                    tabButtons: document.querySelectorAll('.tab-btn-side'),
+                    contentSections: document.querySelectorAll('.content-section'),
+                    assetsTbody: document.getElementById('assets-table-body'),
+                    assetSearchInput: document.getElementById('asset-search-input'),
+                    assetStatusFilter: document.getElementById('asset-status-filter'),
+                    notificationsBtn: document.getElementById('notifications-btn'),
+                    notificationsPanel: document.getElementById('notifications-panel'),
+                    toastContainer: document.getElementById('toast-container'),
+                },
+                charts: {}
+            };
+
+            // --- Core Functions ---
+            /**
+             * Calls the Gemini API with a given prompt.
+             * @param {string} prompt The prompt to send to the API.
+             * @returns {Promise<string|null>} The text response from the API or null if an error occurs.
+             */
+            const callGeminiAPI = async (prompt) => {
+                if (!app.apiKey) {
+                    showToast('کلید API برای سرویس مدیریت هوشمند ملی تنظیم نشده است.', 'error');
+                    console.error("Gemini API key is not set.");
+                    return null;
+                }
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                let retries = 0;
+                while (retries < 3) {
+                    try {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${app.apiModel}:generateContent?key=${app.apiKey}`, {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                        });
+                        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                        const result = await response.json();
+                        return result?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+                    } catch (error) {
+                        console.error('API call failed:', error);
+                        retries++;
+                        await new Promise(res => setTimeout(res, 1000 * retries));
+                    }
+                }
+                showToast('متأسفانه در برقراری ارتباط با سرویس مدیریت هوشمند ملی مشکلی پیش آمده است.', 'error');
+                return null;
+            };
+
+            /**
+             * Displays a toast notification.
+             * @param {string} message The message to display.
+             * @param {'info'|'success'|'error'} type The type of toast.
+             */
+            const showToast = (message, type = 'info') => {
+                const toast = document.createElement('div');
+                const icons = { info: 'fa-info-circle', success: 'fa-check-circle', error: 'fa-exclamation-triangle' };
+                toast.className = `toast toast-${type}`;
+                toast.innerHTML = `<i class="fa-solid ${icons[type]}"></i><p>${DOMPurify.sanitize(message)}</p>`;
+                app.elements.toastContainer.appendChild(toast);
+                setTimeout(() => toast.remove(), 5000);
+            };
+
+            // --- Initialization Functions ---
+            const initCharts = () => {
+                // Portfolio Performance Chart
+                app.charts.performance = new Chart(document.getElementById('portfolioPerformanceChart').getContext('2d'), {
+                    type: 'line', data: { labels: app.mockData.performance.labels, datasets: [{ label: 'ارزش پورتفولیو (میلیارد تومان)', data: app.mockData.performance.data, borderColor: '#d97706', tension: 0.2, fill: true, backgroundColor: 'rgba(217, 119, 6, 0.1)' }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, interaction: { intersect: false, mode: 'index' } }
+                });
+                // Asset Composition Chart
+                app.charts.composition = new Chart(document.getElementById('assetCompositionChart').getContext('2d'), {
+                    type: 'pie', data: { labels: app.mockData.composition.labels, datasets: [{ data: app.mockData.composition.data, backgroundColor: ['#f59e0b', '#fbbf24', '#fcd34d'], borderWidth: 2 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {font: { family: 'Vazirmatn' }} } } }
+                });
+            };
+
+            const populateAssetsTable = (filterText = '', filterStatus = 'all') => {
+                const getStatusClass = (status) => {
+                    if (status === 'توکنیزه شده') return 'status-tokenized';
+                    if (status === 'در حال ارزیابی') return 'status-pending';
+                    return 'status-listed';
+                };
+                
+                const filteredAssets = app.mockData.assets.filter(asset => {
+                    const nameMatch = asset.name.toLowerCase().includes(filterText.toLowerCase());
+                    const statusMatch = filterStatus === 'all' || asset.status === filterStatus;
+                    return nameMatch && statusMatch;
+                });
+
+                app.elements.assetsTbody.innerHTML = filteredAssets.map(a => `
+                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                        <td class="table-cell font-bold">${a.name}</td>
+                        <td class="table-cell">${a.appraised}</td>
+                        <td class="table-cell">${a.market}</td>
+                        <td class="table-cell"><span class="status-badge ${getStatusClass(a.status)}">${a.status}</span></td>
+                        <td class="table-cell space-x-2 space-x-reverse">
+                            <button class="ai-valuation-btn text-green-600 hover:text-green-800" title="✨ تحلیل هوشمند ملی ارزش" data-asset-name="${a.name}"><i class="fa-solid fa-magnifying-glass-dollar"></i></button>
+                            <button class="text-blue-600 hover:text-blue-800" title="عرضه در بازار"><i class="fa-solid fa-store"></i></button>
+                        </td>
+                    </tr>`).join('');
+            };
+
+            const setupEventListeners = () => {
+                // Tab navigation
+                app.elements.tabButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const targetId = button.dataset.target;
+                        app.elements.contentSections.forEach(section => section.classList.remove('active'));
+                        document.getElementById(targetId).classList.add('active');
+                        app.elements.tabButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        app.elements.mainHeaderTitle.innerText = button.innerText.trim();
+                    });
+                });
+
+                // Notifications panel toggle
+                app.elements.notificationsBtn.addEventListener('click', () => {
+                    app.elements.notificationsPanel.classList.toggle('hidden');
+                });
+                document.addEventListener('click', (e) => {
+                    if (!app.elements.notificationsBtn.contains(e.target) && !app.elements.notificationsPanel.contains(e.target)) {
+                        app.elements.notificationsPanel.classList.add('hidden');
+                    }
+                });
+
+                // Asset table filtering
+                app.elements.assetSearchInput.addEventListener('input', (e) => {
+                    populateAssetsTable(e.target.value, app.elements.assetStatusFilter.value);
+                });
+                app.elements.assetStatusFilter.addEventListener('change', (e) => {
+                    populateAssetsTable(app.elements.assetSearchInput.value, e.target.value);
+                });
+
+                // AI Features Event Listeners
+                setupAIFeatureListeners();
+            };
+            
+            /**
+             * Sets up all event listeners for AI-powered features.
+             */
+            const setupAIFeatureListeners = () => {
+                /**
+                 * Generic handler for an AI request button.
+                 * @param {HTMLElement} button The button that was clicked.
+                 * @param {HTMLElement} responseBox The element to display the response in.
+                 * @param {function(): string} promptGenerator A function that returns the prompt string.
+                 * @param {boolean} [showInToast=false] Whether to show the result in a temporary toast-like box.
+                 */
+                const handleAIRequest = async (button, responseBox, promptGenerator, showInToast = false) => {
+                    const originalHTML = button.innerHTML;
+                    button.innerHTML = '<div class="ai-loading-spinner mx-auto" style="width:16px; height:16px; border-width:2px;"></div>';
+                    button.disabled = true;
+                    
+                    // Show a loading state
+                    if (!showInToast) {
+                        responseBox.innerHTML = `<div class="flex items-center justify-center gap-2"><div class="ai-loading-spinner"></div><span>در حال پردازش...</span></div>`;
+                        responseBox.classList.remove('hidden');
+                    } else {
+                        showToast('✨ در حال ارسال درخواست به دستیار هوشمند ملی...', 'info');
+                    }
+                    
+                    const prompt = promptGenerator();
+                    const response = await callGeminiAPI(prompt);
+                    
+                    if (response) {
+                        // Sanitize the response before inserting it into the DOM
+                        const sanitizedResponse = DOMPurify.sanitize(response.replace(/\n/g, '<br>'));
+                        if (showInToast) {
+                           // For toast-like popups, we just update the content
+                           responseBox.innerHTML = sanitizedResponse;
+                           responseBox.classList.remove('hidden');
+                        } else {
+                           responseBox.innerHTML = sanitizedResponse;
+                        }
+                    } else {
+                        // Hide the box if the API call fails
+                        if (!showInToast) responseBox.classList.add('hidden');
+                    }
+                    
+                    // Restore button state
+                    button.innerHTML = originalHTML;
+                    button.disabled = false;
+                };
+                
+                // AI Valuation analysis in the assets table (delegated event)
+                document.getElementById('assets-table-body').addEventListener('click', (e) => {
+                    const valuationBtn = e.target.closest('.ai-valuation-btn');
+                    if (valuationBtn) {
+                        e.stopPropagation(); // Prevent other click listeners from firing
+                        
+                        // Create or find the response box for this row
+                        let responseBox = valuationBtn.parentElement.querySelector('.ai-response-box');
+                        if (!responseBox) {
+                            responseBox = document.createElement('div');
+                            // Style it as a temporary pop-up
+                            responseBox.className = 'ai-response-box absolute bg-white shadow-lg p-2 rounded-lg border z-10 w-64 text-xs';
+                            valuationBtn.parentElement.style.position = 'relative'; // Needed for absolute positioning
+                            valuationBtn.parentElement.appendChild(responseBox);
+
+                            // Hide the box when clicking away
+                            document.addEventListener('click', () => responseBox.remove(), { once: true });
+                        }
+                        
+                        const assetName = valuationBtn.dataset.assetName;
+                        handleAIRequest(valuationBtn, responseBox, () => `شما یک تحلیلگر ارشد املاک هستید. برای دارایی "${assetName}"، یک تحلیل کوتاه از ارزش فعلی بازار ارائه دهید. به ۱ عامل مثبت (مثلاً رشد منطقه) و ۱ عامل منفی (مثلاً افزایش نرخ بهره) که بر قیمت تاثیرگذار است، اشاره کنید.`, true);
+                    }
+                });
+
+                // AI Document Assistant
+                document.getElementById('ai-doc-assistant-btn').addEventListener('click', (e) => {
+                    const assetType = document.getElementById('asset-type-select').value;
+                    handleAIRequest(e.currentTarget, document.getElementById('ai-doc-assistant-response'), () => `شما یک دستیار هوشمند ملی برای توکنیزاسیون دارایی هستید. یک کاربر قصد دارد یک "${assetType}" را توکنیزه کند. ۳ مدرک اصلی مورد نیاز و یک نکته کلیدی برای تسریع فرآیند را به او یادآوری کن.`);
+                });
+
+                // AI Loan Request Assistant
+                document.getElementById('ai-loan-assistant-btn').addEventListener('click', (e) => {
+                    const amount = document.getElementById('loan-amount').value;
+                    const collateral = document.getElementById('loan-collateral-asset').value;
+                    if (!amount) { showToast('لطفا مبلغ وام را وارد کنید.', 'error'); return; }
+                    handleAIRequest(e.currentTarget, document.getElementById('ai-loan-assistant-response'), () => `شما یک دستیار هوشمند ملی برای تهیه درخواست وام هستید. یک پیش‌نویس خلاصه برای درخواست وام به مبلغ ${amount} تومان با وثیقه "${collateral}" آماده کن. این خلاصه باید شامل هدف وام (فرض کنید سرمایه در گردش)، و تشریح ارزش و نقدشوندگی وثیقه باشد تا برای ارائه به بانک مناسب باشد.`);
+                });
+
+                // AI Market Analysis
+                document.getElementById('ai-market-analysis-btn').addEventListener('click', (e) => {
+                    handleAIRequest(e.currentTarget, document.getElementById('ai-market-analysis-response'), () => {
+                        const portfolioSummary = `خلاصه پورتفولیو کاربر: ${JSON.stringify(app.mockData.composition)}`;
+                        return `شما یک تحلیلگر ارشد بازار هستید. با توجه به اینکه بازار مسکن در ۶ ماه گذشته رشد ۱۰٪ داشته اما بازار خودرو راکد بوده است، یک تحلیل کوتاه و یک پیشنهاد استراتژیک (فروش، نگهداری یا خرید بیشتر) برای صاحب پورتفولیوی زیر ارائه دهید.\n\n${portfolioSummary}`;
+                    });
+                });
+
+                // AI Portfolio Optimizer
+                document.getElementById('ai-portfolio-optimizer-btn').addEventListener('click', (e) => {
+                    const goal = document.getElementById('optimization-goal').value;
+                    handleAIRequest(e.currentTarget, document.getElementById('ai-portfolio-optimizer-response'), () => {
+                        const portfolioSummary = `خلاصه پورتفولیو کاربر: ${JSON.stringify(app.mockData.composition)}`;
+                        return `شما یک مشاور سرمایه‌گذاری هوشمند ملی هستید. هدف کاربر "${goal}" است. با توجه به پورتفولیوی او (${portfolioSummary})، دو اقدام عملی و مشخص برای رسیدن به این هدف پیشنهاد دهید.`;
+                    });
+                });
+                
+                // AI Compliance Advisor
+                document.getElementById('ai-compliance-btn').addEventListener('click', (e) => {
+                    const question = document.getElementById('compliance-question').value;
+                    if (!question) { showToast('لطفا سوال خود را وارد کنید.', 'error'); return; }
+                    handleAIRequest(e.currentTarget, document.getElementById('ai-compliance-response'), () => `شما یک مشاور هوشمند ملی حقوقی و مالیاتی هستید. به سوال زیر بر اساس قوانین کلی و رایج پاسخ دهید. تاکید کنید که این پاسخ مشاوره رسمی نیست و باید با متخصص مشورت شود.\n\nسوال: "${question}"`);
+                });
+            };
+
+            // --- App Entry Point ---
+            const main = () => {
+                initCharts();
+                populateAssetsTable();
+                setupEventListeners();
+                showToast('به داشبورد کهن‌بن خوش آمدید!', 'success');
+            };
+
+            main();
+        });
+    </script>
+
+</body>
+</html>

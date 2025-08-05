@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>داشبورد مدیریت کل کهن‌بن (نسخه استراتژیک پیشرفته)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    
+    <!-- D3.js and D3-Sankey for Flow Diagram -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+
+    <!-- DOMPurify for security -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .card {
+            @apply bg-white rounded-xl shadow-sm p-6 border border-gray-200;
+        }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        
+        .tab-btn-side {
+            @apply flex items-center px-4 py-3 text-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition-colors;
+        }
+        .tab-btn-side.active {
+            @apply bg-indigo-600 text-white shadow-md;
+        }
+        .kpi-card {
+            @apply bg-white p-6 rounded-xl shadow-sm border border-gray-200;
+        }
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+        .table-header {
+            @apply bg-gray-50 text-right text-sm font-semibold text-gray-600;
+        }
+        .table-cell {
+            @apply p-4 text-right text-sm text-gray-700 align-middle;
+        }
+        .role-badge {
+            @apply px-3 py-1 text-xs font-bold rounded-full;
+        }
+        .role-gov { @apply bg-blue-100 text-blue-800; }
+        .role-bank { @apply bg-teal-100 text-teal-800; }
+        .role-biz { @apply bg-green-100 text-green-800; }
+        .role-owner { @apply bg-amber-100 text-amber-800; }
+
+        /* AI Feature Styles */
+        .ai-response-box {
+            @apply mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg text-sm text-indigo-900;
+        }
+        .ai-loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4f46e5; /* indigo-600 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300;
+        }
+        .modal-content {
+            @apply bg-white rounded-lg shadow-xl w-full max-w-2xl transform transition-transform duration-300 scale-95;
+        }
+        
+        /* Sankey Chart Styles */
+        .sankey-link {
+          fill: none;
+          stroke-opacity: 0.5;
+        }
+        .sankey-link:hover {
+          stroke-opacity: 0.8;
+        }
+        .sankey-node rect {
+          stroke: #fff;
+          stroke-width: 2px;
+        }
+        .sankey-node text {
+          font-family: 'Vazirmatn', sans-serif;
+          font-size: 12px;
+          fill: #333;
+          font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div id="app-wrapper" class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 text-white flex flex-col p-4 flex-shrink-0">
+            <div class="flex items-center gap-3 mb-10 border-b border-slate-700 pb-4">
+                <i class="fa-solid fa-server text-3xl text-indigo-400"></i>
+                <div>
+                    <h1 class="text-xl font-bold">مدیریت کل</h1>
+                    <span class="text-sm text-slate-400">کهن‌بن</span>
+                </div>
+            </div>
+            <nav class="flex flex-col space-y-2">
+                <a href="#" class="tab-btn-side active" data-target="overview">
+                    <i class="fa-solid fa-tachometer-alt ml-3 w-5 text-center"></i>نمای کلی سیستم
+                </a>
+                <a href="#" class="tab-btn-side" data-target="users">
+                    <i class="fa-solid fa-users-cog ml-3 w-5 text-center"></i>مدیریت کاربران
+                </a>
+                <a href="#" class="tab-btn-side" data-target="network">
+                    <i class="fa-solid fa-network-wired ml-3 w-5 text-center"></i>نظارت بر شبکه
+                </a>
+                 <a href="#" class="tab-btn-side" data-target="tokenomics">
+                    <i class="fa-solid fa-coins ml-3 w-5 text-center"></i>اقتصاد توکن
+                </a>
+                 <a href="#" class="tab-btn-side" data-target="growth">
+                    <i class="fa-solid fa-chart-line ml-3 w-5 text-center"></i>رشد و پذیرش
+                </a>
+                <a href="#" class="tab-btn-side" data-target="security">
+                    <i class="fa-solid fa-shield-alt ml-3 w-5 text-center"></i>امنیت و انطباق
+                </a>
+                <a href="#" class="tab-btn-side" data-target="governance">
+                    <i class="fa-solid fa-gavel ml-3 w-5 text-center"></i>حاکمیت
+                </a>
+            </nav>
+            <div class="mt-auto">
+                <div class="flex items-center gap-3 p-3 bg-slate-700 rounded-lg">
+                    <img src="https://placehold.co/40x40/e2e8f0/1e293b?text=AD" class="rounded-full" alt="User Avatar">
+                    <div>
+                        <p class="font-bold">مدیر کل سیستم</p>
+                        <a href="#" class="text-xs text-indigo-400 hover:underline">خروج از حساب</a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            
+            <h1 class="text-3xl font-bold text-slate-800 mb-8" id="main-header-title">نمای کلی سیستم</h1>
+
+            <!-- Main Dashboard Area -->
+            <div>
+                <!-- Overview Section -->
+                <section id="overview" class="content-section active">
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                         <div class="kpi-card">
+                            <p class="text-gray-500 font-semibold">ارزش کل قفل شده (TVL)</p>
+                            <p class="text-3xl font-bold text-green-600">۱۱۲ تریلیون تومان <span class="text-sm font-normal text-green-500">(▲ ۲.۱٪)</span></p>
+                        </div>
+                        <div class="kpi-card">
+                            <p class="text-gray-500 font-semibold">حجم تراکنش (۲۴ ساعت)</p>
+                            <p class="text-3xl font-bold text-blue-600">۱.۸ تریلیون تومان <span class="text-sm font-normal text-red-500">(▼ ۰.۵٪)</span></p>
+                        </div>
+                        <div class="kpi-card">
+                            <p class="text-gray-500 font-semibold">کاربران فعال</p>
+                            <p class="text-3xl font-bold text-violet-600">۱۵۰,۰۰۰ <span class="text-sm font-normal text-green-500">(▲ ۰.۸٪)</span></p>
+                        </div>
+                        <div class="kpi-card">
+                            <p class="text-gray-500 font-semibold">سلامت بلاکچین</p>
+                            <p class="text-3xl font-bold text-green-600 flex items-center gap-2">عالی <span class="w-3 h-3 bg-green-500 rounded-full"></span></p>
+                        </div>
+                    </div>
+                    <div class="grid lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 card">
+                            <h2 class="text-2xl font-bold mb-2">گزارش استراتژیک روزانه</h2>
+                            <p class="text-sm text-gray-500 mb-4">ارائه شده توسط مدیریت هوشمند ملی</p>
+                            <div id="ai-strategic-advisor-response" class="ai-response-box"></div>
+                        </div>
+                        <div class="flex flex-col gap-6">
+                            <div class="card">
+                                <h3 class="font-bold mb-3">وضعیت آنی سیستم</h3>
+                                <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                                    <span class="font-semibold text-green-800">All Systems Operational</span>
+                                    <i class="fa-solid fa-check-circle text-green-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <h3 class="font-bold mb-3">مرکز هشدارها</h3>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex items-start gap-2 text-amber-700">
+                                        <i class="fa-solid fa-triangle-exclamation mt-1"></i>
+                                        <p>فعالیت مشکوک در حساب کاربری <span class="font-bold">"BankMelli"</span> شناسایی شد.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- User Management Section -->
+                <section id="users" class="content-section">
+                    <div class="card">
+                        <div class="flex flex-wrap gap-4 justify-between items-center mb-4">
+                            <div class="flex gap-4">
+                                <select id="user-role-filter" class="p-2 border rounded-md bg-white">
+                                    <option value="">همه نقش‌ها</option>
+                                    <option value="سازمان دولتی">سازمان دولتی</option>
+                                    <option value="بانک">بانک</option>
+                                    <option value="کسب‌وکار">کسب‌وکار</option>
+                                </select>
+                                <select id="user-status-filter" class="p-2 border rounded-md bg-white">
+                                    <option value="">همه وضعیت‌ها</option>
+                                    <option value="فعال">فعال</option>
+                                    <option value="محدود شده">محدود شده</option>
+                                </select>
+                            </div>
+                            <button class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">
+                                <i class="fa-solid fa-plus ml-2"></i>افزودن کاربر
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="table-header">
+                                    <tr>
+                                        <th class="table-cell">نام / شناسه</th>
+                                        <th class="table-cell">نقش</th>
+                                        <th class="table-cell">تاریخ عضویت</th>
+                                        <th class="table-cell">وضعیت</th>
+                                        <th class="table-cell">عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body"></tbody>
+                            </table>
+                        </div>
+                        <div id="user-pagination" class="flex justify-center items-center mt-6 space-x-2 space-x-reverse"></div>
+                    </div>
+                </section>
+
+                <!-- Network Monitoring Section -->
+                <section id="network" class="content-section">
+                     <div class="grid lg:grid-cols-2 gap-6">
+                        <div class="card">
+                             <h3 class="font-bold mb-4">تراکنش در ثانیه (TPS)</h3>
+                             <div class="chart-container">
+                                <canvas id="tpsChart"></canvas>
+                             </div>
+                        </div>
+                        <div class="card">
+                             <h3 class="font-bold mb-4">جریان اقتصادی بین بخش‌ها (میلیارد تومان)</h3>
+                             <div id="sankeyChartContainer" class="chart-container"></div>
+                        </div>
+                    </div>
+                    <div class="card mt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold">تحلیلگر ناهنجاری مدیریت هوشمند ملی</h2>
+                            <button id="ai-anomaly-detector-btn" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> شناسایی ناهنجاری
+                            </button>
+                        </div>
+                        <div id="ai-anomaly-detector-response" class="hidden ai-response-box"></div>
+                    </div>
+                </section>
+
+                <!-- Tokenomics Section -->
+                <section id="tokenomics" class="content-section">
+                    <div class="grid lg:grid-cols-3 gap-6 mb-6">
+                        <div class="card">
+                             <h3 class="font-bold mb-4">روند قیمت توکن بومی</h3>
+                             <div class="chart-container h-64">
+                                <canvas id="tokenPriceChart"></canvas>
+                             </div>
+                        </div>
+                        <div class="card">
+                             <h3 class="font-bold mb-4">عرضه در گردش</h3>
+                             <div class="chart-container h-64">
+                                <canvas id="tokenSupplyChart"></canvas>
+                             </div>
+                        </div>
+                        <div class="card">
+                             <h3 class="font-bold mb-4">نسبت استیکینگ</h3>
+                             <div class="flex items-center justify-center h-64">
+                                <p class="text-5xl font-bold text-indigo-600">۷۲.۵٪</p>
+                             </div>
+                        </div>
+                    </div>
+                     <div class="card">
+                         <h3 class="font-bold mb-4">شبیه‌ساز اقتصاد توکن مدیریت هوشمند ملی</h3>
+                         <p class="text-sm text-gray-500 mb-4">یک سناریو را برای تحلیل اثرات آن بر اقتصاد توکن وارد کنید.</p>
+                         <textarea id="tokenomics-scenario-input" class="w-full p-2 border rounded-md" rows="3" placeholder="مثال: اثرات یک ایردراپ ۵٪ از کل عرضه به کاربران فعال چه خواهد بود؟"></textarea>
+                         <button id="ai-tokenomics-assistant-btn" class="mt-4 w-full py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> تحلیل سناریو
+                        </button>
+                        <div id="ai-tokenomics-response" class="hidden ai-response-box"></div>
+                    </div>
+                </section>
+
+                <!-- Growth & Adoption Section -->
+                <section id="growth" class="content-section">
+                    <div class="card">
+                        <h2 class="text-2xl font-bold mb-4">تحلیل رشد کاربران بر اساس نقش</h2>
+                        <div class="chart-container">
+                            <canvas id="growthChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Security Section -->
+                <section id="security" class="content-section">
+                    <div class="grid lg:grid-cols-5 gap-6">
+                        <div class="lg:col-span-3 card">
+                            <h3 class="font-bold mb-4">لاگ اقدامات مدیریتی</h3>
+                            <input id="log-search-input" type="text" placeholder="جستجو در لاگ‌ها..." class="w-full p-2 border rounded-md mb-4">
+                            <div id="log-container" class="h-96 overflow-y-auto bg-gray-900 text-white font-mono text-sm p-4 rounded-lg"></div>
+                        </div>
+                         <div class="lg:col-span-2 flex flex-col gap-6">
+                             <div class="card">
+                                 <h3 class="font-bold mb-4">امتیاز ریسک امنیتی</h3>
+                                 <div class="flex items-center justify-center">
+                                     <p class="text-6xl font-bold text-green-600">۹۵ <span class="text-2xl text-gray-400">/ ۱۰۰</span></p>
+                                 </div>
+                             </div>
+                             <div class="card">
+                                 <h3 class="font-bold mb-4">انطباق با مقررات</h3>
+                                 <ul class="space-y-3">
+                                     <li class="flex justify-between items-center"><span>قانون مبارزه با پولشویی</span> <i class="fa-solid fa-check-circle text-green-500"></i></li>
+                                     <li class="flex justify-between items-center"><span>استاندارد KYC</span> <i class="fa-solid fa-check-circle text-green-500"></i></li>
+                                     <li class="flex justify-between items-center"><span>حفاظت از داده</span> <i class="fa-solid fa-exclamation-circle text-amber-500"></i></li>
+                                 </ul>
+                             </div>
+                         </div>
+                    </div>
+                </section>
+                
+                <!-- Governance Section -->
+                <section id="governance" class="content-section">
+                    <div class="grid lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 card">
+                            <h3 class="font-bold mb-4">پیشنهادهای حاکمیتی فعال</h3>
+                            <div class="space-y-4">
+                                <!-- Proposal Item -->
+                                <div class="border p-4 rounded-lg">
+                                    <div class="flex justify-between items-center">
+                                        <p class="font-bold">#۰۱۲: کاهش کارمزد تراکنش به ۰.۰۵٪</p>
+                                        <span class="text-xs font-bold bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">در حال رای‌گیری</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-3">
+                                      <div class="bg-green-600 h-2.5 rounded-full" style="width: 75%"></div>
+                                    </div>
+                                    <div class="flex justify-between text-sm mt-1">
+                                        <span>موافق: ۷۵٪</span>
+                                        <span>مخالف: ۲۵٪</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h3 class="font-bold mb-4">توزیع قدرت رای‌دهی</h3>
+                            <div class="chart-container h-64">
+                                <canvas id="votingPowerChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- User Detail Modal -->
+    <div id="user-detail-modal" class="modal-overlay hidden opacity-0">
+        <div class="modal-content scale-95">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h2 class="text-2xl font-bold" id="modal-user-name"></h2>
+                <button id="modal-close-btn" class="text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <div class="p-6">
+                <p>محتوای جزئیات کاربر در اینجا قرار می‌گیرد...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const API_KEY = ""; 
+            const API_MODEL = "gemini-2.5-flash-preview-05-20";
+
+            // --- Mock Data ---
+            const mockData = {
+                users: [
+                    { id: 'gov-01', name: 'سازمان امور مالیاتی', role: 'سازمان دولتی', date: '۱۴۰۴/۰۱/۱۵', status: 'فعال', suspicious: false },
+                    { id: 'bank-01', name: 'بانک ملی ایران', role: 'بانک', date: '۱۴۰۴/۰۲/۲۰', status: 'فعال', suspicious: true },
+                    { id: 'biz-01', name: 'ایران خودرو', role: 'کسب‌وکار', date: '۱۴۰۴/۰۳/۱۰', status: 'فعال', suspicious: false },
+                    { id: 'owner-01', name: 'شخص حقیقی', role: 'صاحب دارایی', date: '۱۴۰۴/۰۵/۰۱', status: 'محدود شده', suspicious: false },
+                    { id: 'biz-02', name: 'دیجی‌کالا', role: 'کسب‌وکار', date: '۱۴۰۴/۰۵/۱۱', status: 'فعال', suspicious: false },
+                    { id: 'bank-02', name: 'بانک ملت', role: 'بانک', date: '۱۴۰۴/۰۶/۰۱', status: 'فعال', suspicious: false },
+                ],
+                sankey: {
+                    nodes: [
+                        { "node": 0, "name": "بانک‌ها" }, { "node": 1, "name": "کسب‌وکارها" },
+                        { "node": 2, "name": "دولت" }, { "node": 3, "name": "صرافی‌ها" },
+                        { "node": 4, "name": "کاربران" }
+                    ],
+                    links: [
+                        { "source": 0, "target": 1, "value": 250 }, { "source": 0, "target": 4, "value": 150 },
+                        { "source": 2, "target": 4, "value": 300 }, { "source": 1, "target": 3, "value": 180 },
+                        { "source": 4, "target": 3, "value": 400 }
+                    ]
+                },
+                logs: [
+                    "[2025-08-04 11:30:15] INFO: Admin 'root' logged in from IP 192.168.1.1",
+                    "[2025-08-04 11:32:45] AUDIT: Admin 'root' viewed user 'BankMelli'.",
+                    "[2025-08-04 11:35:00] SECURITY: Suspicious activity detected for user 'BankMelli'.",
+                    "[2025-08-04 11:40:10] GOVERNANCE: Proposal #011 (Increase Staking Reward) was passed.",
+                ]
+            };
+            
+            // --- UI Elements ---
+            const mainHeaderTitle = document.getElementById('main-header-title');
+            const tabButtons = document.querySelectorAll('.tab-btn-side');
+            const contentSections = document.querySelectorAll('.content-section');
+            const aiStrategicAdvisorResponse = document.getElementById('ai-strategic-advisor-response');
+            
+            // --- Gemini API Call ---
+            const callGeminiAPI = async (prompt) => {
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                let retries = 0;
+                while (retries < 3) {
+                    try {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${API_KEY}`, {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                        });
+                        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                        const result = await response.json();
+                        return result?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+                    } catch (error) {
+                        console.error('API call failed:', error);
+                        retries++;
+                        await new Promise(res => setTimeout(res, 1000 * retries));
+                    }
+                }
+                return 'متأسفانه در برقراری ارتباط با سرویس هوشمند ملی مشکلی پیش آمده است.';
+            };
+
+            const showLoading = (element) => {
+                element.innerHTML = `<div class="flex items-center justify-center gap-2"><div class="ai-loading-spinner"></div><span>در حال پردازش...</span></div>`;
+                element.classList.remove('hidden');
+                element.classList.add('block');
+            };
+
+            // --- Chart Rendering ---
+            Chart.register(ChartDataLabels);
+            Chart.defaults.font.family = 'Vazirmatn';
+
+            new Chart(document.getElementById('tpsChart').getContext('2d'), {
+                type: 'line', data: { labels: ['10:20', '10:25', '10:30', '10:35', '10:40', '10:45'], datasets: [{ label: 'TPS', data: [1200, 1500, 1450, 1600, 1550, 1800], borderColor: '#4f46e5', tension: 0.2, fill: true, backgroundColor: 'rgba(79, 70, 229, 0.1)' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+             new Chart(document.getElementById('tokenPriceChart').getContext('2d'), {
+                type: 'line', data: { labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر'], datasets: [{ label: 'قیمت (تومان)', data: [100, 110, 105, 120], borderColor: '#8b5cf6', tension: 0.2, fill: false }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+            new Chart(document.getElementById('growthChart').getContext('2d'), {
+                type: 'bar', 
+                data: { 
+                    labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد'],
+                    datasets: [
+                        { label: 'کسب‌وکار', data: [10, 15, 22, 30, 45], backgroundColor: '#22c55e' },
+                        { label: 'بانک', data: [5, 8, 10, 12, 15], backgroundColor: '#14b8a6' },
+                        { label: 'دولتی', data: [2, 3, 3, 4, 5], backgroundColor: '#3b82f6' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, plugins: { legend: { position: 'bottom' } } }
+            });
+            new Chart(document.getElementById('tokenSupplyChart').getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: ['عرضه در گردش', 'قفل شده/ذخیره'], datasets: [{ data: [75000000, 25000000], backgroundColor: ['#4f46e5', '#e0e7ff'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+            new Chart(document.getElementById('votingPowerChart').getContext('2d'), {
+                type: 'pie',
+                data: { labels: ['صرافی‌ها', 'بانک‌ها', 'نهنگ‌ها', 'کاربران خرد'], datasets: [{ data: [40, 25, 20, 15], backgroundColor: ['#8b5cf6', '#14b8a6', '#f97316', '#3b82f6'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // --- Sankey Chart ---
+            function renderSankeyChart() {
+                const container = document.getElementById('sankeyChartContainer');
+                container.innerHTML = ''; // Clear previous
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+
+                const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+                
+                const sankey = d3.sankey()
+                    .nodeWidth(15)
+                    .nodePadding(10)
+                    .extent([[1, 1], [width - 1, height - 6]]);
+
+                const {nodes, links} = sankey(mockData.sankey);
+                
+                const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+                svg.append("g")
+                    .selectAll(".sankey-link")
+                    .data(links)
+                    .join("path")
+                    .attr("class", "sankey-link")
+                    .attr("d", d3.sankeyLinkHorizontal())
+                    .attr("stroke", d => color(d.source.name))
+                    .attr("stroke-width", d => Math.max(1, d.width));
+
+                const node = svg.append("g")
+                    .selectAll(".sankey-node")
+                    .data(nodes)
+                    .join("g")
+                    .attr("class", "sankey-node")
+                    .attr("transform", d => `translate(${d.x0},${d.y0})`);
+
+                node.append("rect")
+                    .attr("height", d => d.y1 - d.y0)
+                    .attr("width", sankey.nodeWidth())
+                    .attr("fill", d => color(d.name));
+
+                node.append("text")
+                    .attr("x", d => d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6)
+                    .attr("y", d => (d.y1 - d.y0) / 2)
+                    .attr("dy", "0.35em")
+                    .attr("text-anchor", d => d.x0 < width / 2 ? "start" : "end")
+                    .text(d => d.name);
+            }
+
+            // --- User Management Logic ---
+            const usersTbody = document.getElementById('users-table-body');
+            const userPagination = document.getElementById('user-pagination');
+            const roleFilter = document.getElementById('user-role-filter');
+            const statusFilter = document.getElementById('user-status-filter');
+            let currentPage = 1;
+            const rowsPerPage = 4;
+
+            function displayUsers() {
+                const filteredUsers = mockData.users.filter(user => {
+                    const roleMatch = roleFilter.value ? user.role === roleFilter.value : true;
+                    const statusMatch = statusFilter.value ? user.status === statusFilter.value : true;
+                    return roleMatch && statusMatch;
+                });
+
+                const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
+                const start = (currentPage - 1) * rowsPerPage;
+                const end = start + rowsPerPage;
+                const paginatedUsers = filteredUsers.slice(start, end);
+
+                usersTbody.innerHTML = paginatedUsers.map(u => `
+                    <tr class="border-b border-gray-200 hover:bg-gray-50 cursor-pointer" data-user-id="${u.id}">
+                        <td class="table-cell font-bold">${u.name} ${u.suspicious ? '<i class="fa-solid fa-triangle-exclamation text-amber-500 ml-2"></i>' : ''}</td>
+                        <td class="table-cell"><span class="role-badge ${u.role.includes('دولتی') ? 'role-gov' : u.role.includes('بانک') ? 'role-bank' : 'role-biz'}">${u.role}</span></td>
+                        <td class="table-cell">${u.date}</td>
+                        <td class="table-cell"><span class="${u.status === 'فعال' ? 'text-green-600' : 'text-red-600'}">${u.status}</span></td>
+                        <td class="table-cell space-x-2 space-x-reverse">
+                            <button class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>`).join('');
+                
+                // Pagination
+                userPagination.innerHTML = '';
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.innerText = i;
+                    pageBtn.className = `px-3 py-1 rounded-md ${i === currentPage ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`;
+                    pageBtn.onclick = () => { currentPage = i; displayUsers(); };
+                    userPagination.appendChild(pageBtn);
+                }
+            }
+            roleFilter.addEventListener('change', () => { currentPage = 1; displayUsers(); });
+            statusFilter.addEventListener('change', () => { currentPage = 1; displayUsers(); });
+            displayUsers();
+
+            // --- Security Log Logic ---
+            const logContainer = document.getElementById('log-container');
+            const logSearchInput = document.getElementById('log-search-input');
+
+            function displayLogs() {
+                const searchTerm = logSearchInput.value.toLowerCase();
+                const filteredLogs = mockData.logs.filter(log => log.toLowerCase().includes(searchTerm));
+                logContainer.innerHTML = filteredLogs.map(log => {
+                    let color = 'text-gray-400';
+                    if (log.includes('INFO')) color = 'text-yellow-400';
+                    if (log.includes('AUDIT')) color = 'text-blue-400';
+                    if (log.includes('SECURITY')) color = 'text-red-400';
+                    return `<p><span class="text-green-400">${log.substring(0, 21)}</span> <span class="${color}">${log.substring(22)}</span></p>`;
+                }).join('');
+            }
+            logSearchInput.addEventListener('input', displayLogs);
+            displayLogs();
+
+            // --- Interactivity ---
+            tabButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = button.dataset.target;
+                    contentSections.forEach(section => section.classList.remove('active'));
+                    document.getElementById(targetId).classList.add('active');
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    mainHeaderTitle.innerText = button.innerText.trim();
+                    if (targetId === 'network') {
+                        // Re-render sankey on tab switch to get correct dimensions
+                        setTimeout(renderSankeyChart, 50);
+                    }
+                });
+            });
+
+            // --- AI Features Logic ---
+            async function handleAIRequest(responseBox, promptGenerator, button = null) {
+                const originalHTML = button ? button.innerHTML : '';
+                if (button) {
+                    button.innerHTML = '<div class="ai-loading-spinner mx-auto" style="width:16px; height:16px; border-width:2px;"></div>';
+                    button.disabled = true;
+                }
+                showLoading(responseBox);
+                const prompt = promptGenerator();
+                const response = await callGeminiAPI(prompt);
+                responseBox.innerHTML = DOMPurify.sanitize((response || 'پاسخی دریافت نشد.').replace(/\n/g, '<br>'));
+                if (button) {
+                    button.innerHTML = originalHTML;
+                    button.disabled = false;
+                }
+            }
+
+            // --- Auto-load AI for Overview ---
+            handleAIRequest(aiStrategicAdvisorResponse, () => {
+                const kpiData = `ارزش کل قفل شده: ۱۱۲ تریلیون تومان (رشد ۲.۱٪)، حجم معاملات ۲۴ ساعته: ۱.۸ تریلیون تومان (کاهش ۰.۵٪)، کاربران فعال: ۱۵۰,۰۰۰ (رشد ۰.۸٪).`;
+                return `شما به عنوان بخشی از "مدیریت هوشمند ملی"، مشاور استراتژیک مدیرعامل پلتفرم کهن‌بن هستید. امروز ${new Date().toLocaleDateString('fa-IR')} است. بر اساس شاخص‌های کلیدی زیر، یک "گزارش استراتژیک روزانه" کوتاه و کاربردی ارائه دهید. به یک فرصت بزرگ و یک ریسک مهم که امروز باید به آن توجه شود، اشاره کنید.\n\n${kpiData}`;
+            });
+
+            // Other AI buttons
+            document.getElementById('ai-anomaly-detector-btn').addEventListener('click', (e) => {
+                handleAIRequest(document.getElementById('ai-anomaly-detector-response'), () => `شما سیستم "مدیریت هوشمند ملی" برای نظارت بر شبکه هستید. با تحلیل جریان تراکنش‌های کلان، یک ناهنجاری سیستمی را شناسایی کرده‌اید: "حجم بالایی از سرمایه به صورت هماهنگ از استخرهای نقدینگی سه صرافی بزرگ به سمت یک نهاد تازه تأسیس در حال حرکت است." این الگو را توضیح داده و ریسک احتمالی آن را (مانند دستکاری بازار) تشریح کنید.`, e.currentTarget);
+            });
+            document.getElementById('ai-tokenomics-assistant-btn').addEventListener('click', (e) => {
+                const scenario = document.getElementById('tokenomics-scenario-input').value;
+                if (!scenario) return;
+                handleAIRequest(document.getElementById('ai-tokenomics-response'), () => `شما به عنوان بخشی از "مدیریت هوشمند ملی"، یک متخصص اقتصاد توکن (Tokenomics) هستید. اثرات سناریوی زیر را بر قیمت توکن، تمرکززدایی و انگیزه هولدرها تحلیل کن.\n\nسناریو: "${scenario}"`, e.currentTarget);
+            });
+        });
+    </script>
+
+</body>
+</html>

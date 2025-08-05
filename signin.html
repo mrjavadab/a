@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ورود به سامانه کهن‌بن</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body { font-family: 'Vazirmatn', sans-serif; background-color: #f1f5f9; }
+        .login-gradient { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); }
+        .form-input { @apply w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500; }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2">
+            
+            <div class="p-8 md:p-12">
+                <h2 class="text-3xl font-extrabold text-slate-800 mb-4">ورود به حساب کاربری</h2>
+                <p class="text-slate-500 mb-8">برای دسترسی به داشبورد خود وارد شوید.</p>
+                <form id="login-form" class="space-y-6">
+                    <div>
+                        <label for="username" class="block text-sm font-bold text-slate-700 mb-2">نام کاربری / شماره موبایل</label>
+                        <input type="text" id="username" name="username" class="form-input" required placeholder="برای تست، یکی از نقش‌ها را وارد کنید (مثلا: admin)">
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-bold text-slate-700 mb-2">رمز عبور</label>
+                        <input type="password" id="password" name="password" class="form-input" required value="12345">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <a href="recovery.html" class="text-sm font-semibold text-teal-600 hover:text-teal-700">رمز عبور را فراموش کرده‌اید؟</a>
+                    </div>
+                    <div>
+                        <button type="submit" class="w-full flex items-center justify-center py-3 px-4 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 shadow-lg">
+                            ورود
+                        </button>
+                    </div>
+                </form>
+                <div class="mt-8 text-center">
+                    <p class="text-slate-500">حساب کاربری ندارید؟ <a href="login.html" class="font-bold text-teal-600 hover:text-teal-700">ثبت نام کنید</a></p>
+                </div>
+            </div>
+
+            <div class="hidden md:flex flex-col items-center justify-center p-12 login-gradient text-white text-center">
+                <h1 class="text-5xl font-extrabold">کُهَن‌بُن</h1>
+                <p class="mt-4 text-lg text-slate-200 max-w-xs">شریان اقتصاد هوشمند ایران</p>
+                <div class="w-24 h-1 bg-white/50 mt-8 mb-8 rounded-full"></div>
+                <i class="fas fa-fingerprint text-8xl text-white opacity-20"></i>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+            const username = document.getElementById('username').value.toLowerCase().trim();
+            let destination = '';
+
+            switch (username) {
+                case 'admin': destination = 'admin.html'; break;
+                case 'govern': destination = 'govern.html'; break;
+                case 'bank': destination = 'bank.html'; break;
+                case 'compani': destination = 'compani.html'; break;
+                case 'invest': destination = 'invest.html'; break;
+                case 'invest2': destination = 'invest2.html'; break;
+                case 'excheng': destination = 'excheng.html'; break;
+                default:
+                    alert('نقش کاربری وارد شده معتبر نیست! لطفاً یکی از این موارد را برای تست وارد کنید: admin, govern, bank, compani, invest, invest2, excheng');
+                    return;
+            }
+
+            alert(`ورود به عنوان "${username}" موفقیت آمیز بود. در حال انتقال به داشبورد...`);
+            window.location.href = destination;
+        });
+    </script>
+
+</body>
+</html>
